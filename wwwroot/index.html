@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker App - Register & Login</title>
+</head>
+<body>
+    <h2>Register</h2>
+    <form id="registerForm">
+        <input type="text" id="registerUsername" placeholder="Username" required>
+        <br>
+        <input type="password" id="registerPassword" placeholder="Password" required>
+        <br>
+        <button type="submit">Register</button>
+    </form>
+
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" required>
+        <br>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <br>
+        <button type="submit">Login</button>
+    </form>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var username = document.getElementById('registerUsername').value;
+            var password = document.getElementById('registerPassword').value;
+
+            fetch('/Auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ Username: username, Password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert('Registration successful!');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Registration failed.');
+            });
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var username = document.getElementById('loginUsername').value;
+            var password = document.getElementById('loginPassword').value;
+
+            fetch('/Auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ Username: username, Password: password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // If the response is not ok, throw an error with the status
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                } else {
+                    // If the response is ok, process the data
+                    return response.json();
+                }
+            })
+            .then(data => {
+                console.log('Success:', data);
+                alert('Login successful!');
+                // You can store the token in localStorage and redirect if needed
+                localStorage.setItem('jwtToken', data.token);
+                // window.location.href = '/some-protected-route';
+                window.location.href = '/join';
+
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Login failed.');
+            });
+        });
+    </script>
+</body>
+</html>
