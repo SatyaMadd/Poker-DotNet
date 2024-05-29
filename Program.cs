@@ -18,8 +18,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<PokerContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add JWT Authentication
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJoinRepository, JoinRepository>();
 builder.Services.AddScoped<IJoinService, JoinService>();
+builder.Services.AddScoped<ILobbyRepository, LobbyRepository>();
+builder.Services.AddScoped<ILobbyService, LobbyService>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -54,7 +58,8 @@ if (app.Environment.IsDevelopment())
 
 var rewriteOptions = new RewriteOptions()
     .AddRewrite(@"^join$", "join.html", skipRemainingRules: true)
-    .AddRewrite(@"^home$", "index.html", skipRemainingRules: true);
+    .AddRewrite(@"^home$", "index.html", skipRemainingRules: true)
+    .AddRewrite(@"^lobby$", "lobby.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
 

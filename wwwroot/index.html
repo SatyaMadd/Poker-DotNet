@@ -75,7 +75,7 @@
                 // You can store the token in localStorage and redirect if needed
                 localStorage.setItem('jwtToken', data.token);
                 // window.location.href = '/some-protected-route';
-                window.location.href = '/join';
+                window.location.href = data.redirectUrl;
 
             })
             .catch((error) => {

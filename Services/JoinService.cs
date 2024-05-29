@@ -1,6 +1,5 @@
 using pokerapi.Interfaces;
 using pokerapi.Models;
-using pokerapi.Repositories;
 
 namespace pokerapi.Services
 {

@@ -1,5 +1,5 @@
 namespace pokerapi.Interfaces{
-    public interface IGameService
+    public interface ILobbyService
     {
         // ... Other game-related methods ...
     }
