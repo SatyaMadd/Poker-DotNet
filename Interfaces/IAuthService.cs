@@ -6,6 +6,6 @@ namespace pokerapi.Interfaces{
     {
         Task<string> Register(UserRegistrationModel userModel);
         Task<string> Login(UserLoginModel userModel);
-        Task<bool> UserExists(string username);
+        Task<bool> PlayerExists(string username);
     }
 }

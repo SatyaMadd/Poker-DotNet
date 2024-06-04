@@ -39,17 +39,22 @@ namespace pokerapi.Services
                 return true;
             }
 
+            // Check if there are any other players in the game
+            var isFirstPlayer = game.Players.Count == 0;
+
             // Create a new player and link to the game
             var player = new Player
             {
                 Username = username,
-                GameId = gameId
+                GlobalVId = gameId,
+                IsAdmin = isFirstPlayer  // Set as admin if this is the first player
                 // Initialize other properties as needed
             };
 
             await _joinRepository.AddPlayerToGameAsync(player);
             return true;
         }
+
 
     }
 }

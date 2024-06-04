@@ -1,6 +1,10 @@
+using pokerapi.Models;
 namespace pokerapi.Interfaces{
     public interface ILobbyService
     {
-        // ... Other game-related methods ...
+        Task StartGameAsync(string username);
+        Task KickPlayerAsync(string username, string kickedUsername);
+        Task LeaveGameAsync(string username);
+        Task<IEnumerable<PlayerAdmin>> GetPlayersAsync(string username);
     }
 }

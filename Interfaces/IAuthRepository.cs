@@ -5,8 +5,8 @@ namespace pokerapi.Interfaces
 {
     public interface IAuthRepository
     {
-        Task<User> Register(User user);
-        Task<User> Login(string username, string password);
-        Task<bool> UserExists(string username);
+        Task<User> AddUser(User user);
+        Task<User> GetUser(string username);
+        Task<Player> GetPlayer(string username);
     }
 }

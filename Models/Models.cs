@@ -19,16 +19,15 @@ namespace pokerapi.Models
         [Key]
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
+        public bool IsAdmin { get; set; } 
         public string Ready { get; set; } = string.Empty;
         public string Turn { get; set; } = string.Empty;
         public int Chips { get; set; }
         public string Status { get; set; } = string.Empty;
         public decimal Score { get; set; }
-        public int GameId { get; set; }
 
-        [ForeignKey("GameId")]
-        [JsonIgnore]
-        public virtual GlobalV? Game { get; set; }
+        [ForeignKey("GlobalV")]
+        public int GlobalVId { get; set; }
 
         public virtual ICollection<PlayerCard> PlayerCards { get; set; } = [];
         public virtual ICollection<BetTrack> Bets { get; set; } = [];
@@ -53,17 +52,14 @@ namespace pokerapi.Models
         [Key]
         public int Id { get; set; }
         // Replace Username with PlayerId
-        public int PlayerId { get; set; }
         public int Amount { get; set; }
         public int TotalAm { get; set; }
+
+        [ForeignKey("Player")]
+        public int PlayerId { get; set; }
+
+        [ForeignKey("GlobalV")]
         public int GameId { get; set; }
-
-        [ForeignKey("GameId")]
-        public virtual GlobalV? Game { get; set; }
-
-        // Navigation property for the Player
-        [ForeignKey("PlayerId")]
-        public virtual Player? Player { get; set; }
     }
 
 
@@ -73,10 +69,9 @@ namespace pokerapi.Models
         public int Id { get; set; }
         public int CardNumber { get; set; }
         public string Suit { get; set; } = string.Empty;
-        public int GameId { get; set; }
         
-        [ForeignKey("GameId")]
-        public virtual GlobalV? Game { get; set; }
+        [ForeignKey("GlobalV")]
+        public int GameId { get; set; }
     }
 
     public class DeckCard
@@ -85,22 +80,20 @@ namespace pokerapi.Models
         public int Id { get; set; }
         public int CardNumber { get; set; }
         public int Suit { get; set; }
-        public int GameId { get; set; }
 
-        [ForeignKey("GameId")]
-        public virtual GlobalV? Game { get; set; }
+        [ForeignKey("GlobalV")]
+        public int GameId { get; set; }
     }
 
     public class PlayerCard
     {
         [Key]
-        public int Id { get; set; } // This is now just 'Id' instead of 'PlayerCardId'
-        public int PlayerId { get; set; } // This remains as a reference to the player's 'Id'
+        public int Id { get; set; } 
         public int CardNumber { get; set; }
         public string Suit { get; set; } = string.Empty;
 
-        [ForeignKey("PlayerId")]
-        public virtual Player? Player { get; set; }
+        [ForeignKey("Player")]
+        public int PlayerId { get; set; } 
     }
 
 }

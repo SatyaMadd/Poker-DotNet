@@ -16,22 +16,23 @@ namespace pokerapi.Repositories
             _context = context;
         }
 
-        public async Task<User> Register(User user)
+        public async Task<User> AddUser(User user)
         {
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return user;
         }
 
-        public async Task<User> Login(string username, string password)
+        public async Task<User> GetUser(string username)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             return user;
         }
 
-        public async Task<bool> UserExists(string username)
+        public async Task<Player> GetPlayer(string username)
         {
-            return await _context.Users.AnyAsync(u => u.Username == username);
+            var player = await _context.Players.FirstOrDefaultAsync(u => u.Username == username);
+            return player;
         }
     }
 }

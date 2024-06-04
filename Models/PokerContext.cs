@@ -16,5 +16,9 @@ namespace pokerapi.Models
         public DbSet<CommCard> CommCards { get; set; }
         public DbSet<DeckCard> DeckCards { get; set; }
         public DbSet<PlayerCard> PlayerCards { get; set; }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseLazyLoadingProxies();
+        }
     }
 }

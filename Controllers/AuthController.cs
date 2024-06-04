@@ -39,7 +39,7 @@ namespace pokerapi.Controllers
             {
                 var token = await _authService.Login(userModel);
                 // Check if the user is already in the Player table
-                var playerExists = await _authService.UserExists(userModel.Username);
+                var playerExists = await _authService.PlayerExists(userModel.Username);
                 var redirectUrl = playerExists ? "/lobby" : "/join";
                 return Ok(new { token = token, redirectUrl = redirectUrl });
             }

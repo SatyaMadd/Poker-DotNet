@@ -21,7 +21,7 @@ namespace pokerapi.Services
 
         public async Task<string> Register(UserRegistrationModel userModel)
         {
-            if (await _authRepo.UserExists(userModel.Username))
+            if (await _authRepo.GetUser(userModel.Username) != null)
             {
                 throw new Exception("User already exists.");
             }
@@ -35,7 +35,7 @@ namespace pokerapi.Services
                 PasswordSalt = passwordSalt
             };
 
-            var createdUser = await _authRepo.Register(user);
+            var createdUser = await _authRepo.AddUser(user);
 
             var token = GenerateJwtToken(createdUser.Id.ToString(), createdUser.Username);
             return token;
@@ -43,7 +43,7 @@ namespace pokerapi.Services
 
         public async Task<string> Login(UserLoginModel userModel)
         {
-            var user = await _authRepo.Login(userModel.Username, userModel.Password);
+            var user = await _authRepo.GetUser(userModel.Username);
 
             if (user == null)
             {
@@ -59,11 +59,10 @@ namespace pokerapi.Services
             return token;
         }
 
-        public async Task<bool> UserExists(string username)
+        public async Task<bool> PlayerExists(string username)
         {
-            return await _authRepo.UserExists(username);
+            return await _authRepo.GetPlayer(username) != null;
         }
-
         private string GenerateJwtToken(string userId, string username)
         {
             var claims = new List<Claim>

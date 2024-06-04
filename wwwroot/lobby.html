@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lobby</title>
+</head>
+<body>
+    <h1>Lobby</h1>
+    <div id="playerList"></div>
+    <button id="leaveButton">Leave Game</button>
+    <button id="startButton" style="display: none;">Start Game</button>
+
+    <script>
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        };
+        const token = localStorage.getItem('jwtToken');
+        var username = parseJwt(token).sub;
+        function isAuthenticated() {
+            return token !== null;
+        }
+
+        window.onload = function() {
+            refreshPlayerList();
+            if (!isAuthenticated()) {
+                window.location.href = '/home';
+            }
+        };
+
+        function refreshPlayerList() {
+            fetch('/Lobby/GetPlayers', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(response =>{ 
+                if (!response.ok) {
+                    window.location.href = '/join';
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(players => {
+                var playerList = document.getElementById('playerList');
+                playerList.innerHTML = ''; // Clear the player list
+                
+                var isAdmin = players.some(player => player.username === username && player.isAdmin);
+                players.forEach(player => {
+                    var playerElement = document.createElement('div');
+                    playerElement.textContent = player.username + (player.isAdmin ? ' (Admin)' : '');
+                    playerList.appendChild(playerElement);
+
+                    if (isAdmin) {
+                        var kickButton = document.createElement('button');
+                        kickButton.textContent = 'Kick';
+                        playerElement.appendChild(kickButton);
+
+                        kickButton.addEventListener('click', function() {
+                            fetch('/Lobby/KickPlayer', {
+                                method: 'POST',
+                                headers: { 
+                                    'Authorization': 'Bearer ' + token,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(player.username)
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                refreshPlayerList();
+                            })
+                            .catch(error => {
+                                console.error('There has been a problem with your fetch operation:', error);
+                            });
+                        });
+                    }
+                });
+
+                document.getElementById('startButton').style.display = isAdmin ? 'inline' : 'none';
+            });
+        }
+
+        document.getElementById('leaveButton').addEventListener('click', function() {
+            fetch('/Lobby/LeaveGame', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                window.location.href = '/join';
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        });
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            fetch('/Lobby/StartGame', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        });
+
+        // Refresh the player list every 5 seconds
+        setInterval(refreshPlayerList, 5000);
+    </script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pokerapi.Models;
 
@@ -10,12 +11,14 @@ using pokerapi.Models;
 namespace pokerapi.Migrations
 {
     [DbContext(typeof(PokerContext))]
-    partial class PokerContextModelSnapshot : ModelSnapshot
+    [Migration("20240602133853_VirtualReferenceUpdate")]
+    partial class VirtualReferenceUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
 
             modelBuilder.Entity("pokerapi.Models.BetTrack", b =>
                 {
@@ -126,7 +129,10 @@ namespace pokerapi.Migrations
                     b.Property<int>("Chips")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("GlobalVId")
+                    b.Property<int>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("GlobalVId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsAdmin")
@@ -231,9 +237,7 @@ namespace pokerapi.Migrations
                 {
                     b.HasOne("pokerapi.Models.GlobalV", null)
                         .WithMany("Players")
-                        .HasForeignKey("GlobalVId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("GlobalVId");
                 });
 
             modelBuilder.Entity("pokerapi.Models.PlayerCard", b =>

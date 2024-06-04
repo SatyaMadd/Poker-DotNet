@@ -25,6 +25,7 @@ namespace pokerapi.Controllers
         }
 
         [HttpPost("CreateGame")]
+        [Authorize]
         public async Task<IActionResult> CreateGame([FromBody] string gameName)
         {
             if (string.IsNullOrWhiteSpace(gameName))
@@ -35,8 +36,9 @@ namespace pokerapi.Controllers
             var game = await _joinService.CreateGameAsync(gameName);
             return Ok(game);
         }
-        [Authorize]
+        
         [HttpPost("JoinGame/{gameId}")]
+        [Authorize]
         public async Task<IActionResult> JoinGame(int gameId)
         {
             
@@ -49,5 +51,6 @@ namespace pokerapi.Controllers
             
             return Ok();
         }
+
     }
 }
