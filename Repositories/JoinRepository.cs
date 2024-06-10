@@ -23,7 +23,7 @@ namespace pokerapi.Repositories
 
         public async Task<GlobalV> CreateGameAsync(string name)
         {
-            var newGame = new GlobalV { Name = name };
+            var newGame = new GlobalV { Name = name, Round  = 1 };
             _context.GlobalVs.Add(newGame);
             await _context.SaveChangesAsync();
             return newGame;

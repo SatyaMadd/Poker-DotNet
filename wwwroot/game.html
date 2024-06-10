@@ -1,0 +1,128 @@
+<!-- game.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Other head content... -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Chips</th>
+                <th>Turn</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="playerTableBody">
+            <!-- Player rows will be dynamically added here -->
+        </tbody>
+    </table>
+    <h2>Community Cards</h2>
+    <table id="commCardsTable">
+        <thead>
+            <tr>
+                <th>Value</th>
+                <th>Suit</th>
+            </tr>
+        </thead>
+    </table>
+
+    <p>Pot: <span id="potValue"></span></p>
+    <p>Round: <span id="roundValue"></span></p>
+
+    <h2>Player Cards</h2>
+    <table id="playerCardsTable">
+        <thead>
+            <tr>
+                <th>Value</th>
+                <th>Suit</th>
+            </tr>
+        </thead>
+    </table>
+    
+    <script>
+        window.onload = function() {
+            fetch('/Game/GetPlayers/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                }
+            })
+            .then(response => response.json())
+            .then(players => {
+                let tbody = document.getElementById('playerTableBody');
+                tbody.innerHTML = '';
+
+                players.forEach(player => {
+                    let row = tbody.insertRow();
+
+                    let usernameCell = row.insertCell();
+                    let chipsCell = row.insertCell();
+                    let turnCell = row.insertCell();
+                    let statusCell = row.insertCell();
+
+                    usernameCell.textContent = player.username;
+                    chipsCell.textContent = player.chips;
+                    turnCell.textContent = player.turn ? 'Yes' : 'No';
+                    statusCell.textContent = player.status ? 'Active' : 'Inactive';
+                });
+            })
+            .catch(error => console.error('Error:', error));
+            
+            fetch('/Game/GetGame/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                }
+            })
+            .then(response => response.json())
+            .then(game => {
+                // Update community cards
+                const commCardsTable = document.getElementById('commCardsTable');
+                if(game.CommCards!=null){
+                    game.CommCards.forEach(card => {
+                        const row = commCardsTable.insertRow();
+                        row.innerHTML = `<td>${card.CardNumber}</td><td>${card.Suit}</td>`;
+                    });
+                }
+                
+
+                // Update pot and round
+                document.getElementById('potValue').textContent = game.Pot;
+                document.getElementById('roundValue').textContent = game.Round;
+
+                
+            })
+            .catch(error => console.error('Error:', error));
+            fetch('/Game/GetPlayerCards/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                }
+            })
+            .then(response => response.json())
+            .then(playerCards => {
+                const playerCardsTable = document.getElementById('playerCardsTable');
+
+                playerCards.forEach(card => {
+                    const row = playerCardsTable.insertRow();
+                    const cardNumberCell = row.insertCell();
+                    const suitCell = row.insertCell();
+
+                    cardNumberCell.textContent = card.cardNumber;
+                    suitCell.textContent = card.suit;
+                });
+            })
+            .catch(error => console.error('Error fetching player cards:', error));
+        };
+        
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/gamehub") // Use the hub URL you mapped in Program.cs
+            .build();
+        
+        
+    </script>
+</body>
+</html>

@@ -9,6 +9,8 @@ using pokerapi.Interfaces;
 using pokerapi.Services;    
 using pokerapi.Repositories;  
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.SignalR;
+using pokerapi.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +61,10 @@ builder.Services.AddScoped<IJoinRepository, JoinRepository>();
 builder.Services.AddScoped<IJoinService, JoinService>();
 builder.Services.AddScoped<ILobbyRepository, LobbyRepository>();
 builder.Services.AddScoped<ILobbyService, LobbyService>();
+builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IGameRepository, GameRepository>();
+builder.Services.AddScoped<IWinService, WinService>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,6 +84,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
     };
 });
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -94,9 +101,12 @@ if (app.Environment.IsDevelopment())
 var rewriteOptions = new RewriteOptions()
     .AddRewrite(@"^join$", "join.html", skipRemainingRules: true)
     .AddRewrite(@"^home$", "index.html", skipRemainingRules: true)
-    .AddRewrite(@"^lobby$", "lobby.html", skipRemainingRules: true);
+    .AddRewrite(@"^lobby$", "lobby.html", skipRemainingRules: true)
+    .AddRewrite(@"^game$", "game.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
+
+app.MapHub<GameHub>("/gamehub"); 
 
 app.UseHttpsRedirection();
 

@@ -4,7 +4,7 @@ using pokerapi.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
-namespace YourNamespace.Controllers
+namespace pokerapi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
@@ -21,8 +21,10 @@ namespace YourNamespace.Controllers
         [HttpPost("StartGame")]
         public async Task<IActionResult> StartGame()
         {
-            var username = User.Identity?.Name; 
-            await _lobbyService.StartGameAsync(username);
+            var username = User.Identity?.Name;
+            await _lobbyService.AddDeckCardsAsync(username);
+            await _lobbyService.DealCardsAsync(username, false);
+            await _lobbyService.ReadyPlayersAsync(username);
             return Ok();
         }
 

@@ -27,7 +27,6 @@ namespace pokerapi.Controllers
             }
             catch (Exception ex)
             {
-                // Handle the exception appropriately
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -38,14 +37,12 @@ namespace pokerapi.Controllers
             try
             {
                 var token = await _authService.Login(userModel);
-                // Check if the user is already in the Player table
                 var playerExists = await _authService.PlayerExists(userModel.Username);
                 var redirectUrl = playerExists ? "/lobby" : "/join";
-                return Ok(new { token = token, redirectUrl = redirectUrl });
+                return Ok(new { token, redirectUrl });
             }
             catch (Exception ex)
             {
-                // Handle the exception appropriately
                 return BadRequest(new { message = ex.Message });
             }
         }

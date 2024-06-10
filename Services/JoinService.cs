@@ -47,7 +47,8 @@ namespace pokerapi.Services
             {
                 Username = username,
                 GlobalVId = gameId,
-                IsAdmin = isFirstPlayer  // Set as admin if this is the first player
+                IsAdmin = isFirstPlayer,
+                // Set as admin if this is the first player
                 // Initialize other properties as needed
             };
 

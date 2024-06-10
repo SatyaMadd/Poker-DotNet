@@ -26,7 +26,6 @@
         }
 
         window.onload = function() {
-            refreshPlayerList();
             if (!isAuthenticated()) {
                 window.location.href = '/home';
             }
@@ -46,14 +45,17 @@
             .then(players => {
                 var playerList = document.getElementById('playerList');
                 playerList.innerHTML = ''; // Clear the player list
-                
+                var ready = players.some(player => player.isReady);
+                if(ready){
+                    window.location.href = '/game';
+                }
                 var isAdmin = players.some(player => player.username === username && player.isAdmin);
                 players.forEach(player => {
                     var playerElement = document.createElement('div');
                     playerElement.textContent = player.username + (player.isAdmin ? ' (Admin)' : '');
                     playerList.appendChild(playerElement);
 
-                    if (isAdmin) {
+                    if (isAdmin && player.username !== username) {
                         var kickButton = document.createElement('button');
                         kickButton.textContent = 'Kick';
                         playerElement.appendChild(kickButton);
@@ -115,6 +117,7 @@
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
+                refreshPlayerList();
             })
             .catch(error => {
                 console.error('There has been a problem with your fetch operation:', error);

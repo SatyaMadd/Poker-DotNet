@@ -20,17 +20,17 @@ namespace pokerapi.Models
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
         public bool IsAdmin { get; set; } 
-        public string Ready { get; set; } = string.Empty;
-        public string Turn { get; set; } = string.Empty;
+        public bool Ready { get; set; }
+        public bool Turn { get; set; } 
         public int Chips { get; set; }
-        public string Status { get; set; } = string.Empty;
+        public bool Status { get; set; }
         public decimal Score { get; set; }
-
+        
         [ForeignKey("GlobalV")]
         public int GlobalVId { get; set; }
 
         public virtual ICollection<PlayerCard> PlayerCards { get; set; } = [];
-        public virtual ICollection<BetTrack> Bets { get; set; } = [];
+        public virtual ICollection<Bet> Bets { get; set; } = [];
 
     }
 
@@ -42,24 +42,25 @@ namespace pokerapi.Models
         public int Round { get; set; }
         public int Turns { get; set; }
         public int Pot { get; set; }
+        public ICollection<string> Order { get; set; } = [];
         public virtual ICollection<Player> Players { get; set; } = [];
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
         public virtual ICollection<DeckCard> DeckCards { get; set; } = [];
     }
 
-    public class BetTrack
+    public class Bet
     {
         [Key]
         public int Id { get; set; }
         // Replace Username with PlayerId
-        public int Amount { get; set; }
+        public int CurrentAm { get; set; }
         public int TotalAm { get; set; }
 
         [ForeignKey("Player")]
         public int PlayerId { get; set; }
 
         [ForeignKey("GlobalV")]
-        public int GameId { get; set; }
+        public int GlobalVId { get; set; }
     }
 
 
@@ -68,10 +69,10 @@ namespace pokerapi.Models
         [Key]
         public int Id { get; set; }
         public int CardNumber { get; set; }
-        public string Suit { get; set; } = string.Empty;
+        public int Suit { get; set; }
         
         [ForeignKey("GlobalV")]
-        public int GameId { get; set; }
+        public int GlobalVId { get; set; }
     }
 
     public class DeckCard
@@ -82,7 +83,7 @@ namespace pokerapi.Models
         public int Suit { get; set; }
 
         [ForeignKey("GlobalV")]
-        public int GameId { get; set; }
+        public int GlobalVId { get; set; }
     }
 
     public class PlayerCard
@@ -90,7 +91,7 @@ namespace pokerapi.Models
         [Key]
         public int Id { get; set; } 
         public int CardNumber { get; set; }
-        public string Suit { get; set; } = string.Empty;
+        public int Suit { get; set; }
 
         [ForeignKey("Player")]
         public int PlayerId { get; set; } 
