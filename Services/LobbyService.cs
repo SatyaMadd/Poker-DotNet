@@ -19,8 +19,8 @@ namespace pokerapi.Services{
             var player = await _lobbyRepository.GetPlayer(username);
             if (player.IsAdmin&&player.Ready==false)
             {
-                await _lobbyRepository.ReadyPlayers(player.GlobalVId);
                 await _lobbyRepository.InitializeTurnOrder(player.GlobalVId);
+                await _lobbyRepository.ReadyPlayers(player.GlobalVId);
                 await _lobbyRepository.InitializeBets(player.GlobalVId);
             }
         }
@@ -28,25 +28,41 @@ namespace pokerapi.Services{
         public async Task KickPlayerAsync(string username, string kickedUsername)
         {
             var player = await _lobbyRepository.GetPlayer(username);
+            var kickedPlayer = await _lobbyRepository.GetPlayer(kickedUsername);
+            if(player==null || kickedPlayer==null){
+                return;
+            }
             if (player.IsAdmin)
             {
-                await _lobbyRepository.DeletePlayer(kickedUsername);
+                if (!player.Ready){
+                    await _lobbyRepository.DeletePlayer(username);
+                }else{
+                    await _gameRepository.TurnPlayerIntoLeaveBot(kickedPlayer.Id);
+                }
             }
         }
-        public async Task LeaveGameAsync(string username)
+        public async Task<string> LeaveGameAsync(string username)
         {
             var player = await _lobbyRepository.GetPlayer(username);
             var game = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
             if (game != null)
             {
-                if (game.Players.Count == 1){
-                    await _lobbyRepository.DeletePlayer(username);
-                    await _lobbyRepository.DeleteGame(game.Id);
-                } 
-                else{
-                    await _lobbyRepository.DeletePlayer(username);
-                }
-            }          
+                if (!player.Ready){
+                    if (game.Players.Count == 1){
+                        await _lobbyRepository.DeletePlayer(username);
+                        await _lobbyRepository.DeleteGame(game.Id);
+                    } 
+                    else{
+                        await _lobbyRepository.DeletePlayer(username);
+                    }
+                }else{
+                        bool isTurn = await _gameRepository.TurnPlayerIntoLeaveBot(player.Id);
+                        if(isTurn){
+                            return $"BotLeave{player.Id}";
+                        }
+                }  
+            }
+            return null;
         }
         public async Task<IEnumerable<PlayerLobbyDTO>> GetPlayersAsync(string username)
         {
@@ -79,28 +95,22 @@ namespace pokerapi.Services{
             var game = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
             if ((player.IsAdmin&&!player.Ready)||inGame)
             {
-                // Get all the players in the game
                 var players = game.Players;
 
-                // Get all the cards in the deck
                 var deckCards = await _lobbyRepository.GetDeckCards(game.Id);
 
-                // Random number generator
                 var rng = new Random();
 
                 foreach (var play in players)
                 {
+                    await _lobbyRepository.ClearPlayerCards(play.Id);
                     for (int i = 0; i < 2; i++)
                     {
-                        // Choose a random card from the deck
                         var randomIndex = rng.Next(deckCards.Count);
                         var card = deckCards[randomIndex];
-
-                        // Remove the card from the deck
                         deckCards.RemoveAt(randomIndex);
                         await _lobbyRepository.RemoveDeckCard(card.Id);
 
-                        // Add the card to the player's hand
                         var playerCard = new PlayerCard
                         {
                             CardNumber = card.CardNumber,

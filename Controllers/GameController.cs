@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using pokerapi.Models;
 using pokerapi.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+
 
 namespace pokerapi.Controllers
 {
@@ -52,24 +54,24 @@ namespace pokerapi.Controllers
         public async Task<IActionResult> Check()
         {
             var username = User.Identity?.Name; 
-            await _gameService.CheckAsync(username);
-            return Ok();
+            var actions = await _gameService.CheckAsync(username);
+            return Ok(actions);
         }
 
         [HttpPost("Bet")]
         public async Task<IActionResult> Bet([FromBody] int amount)
         {
             var username = User.Identity?.Name; 
-            await _gameService.BetAsync(username, amount);
-            return Ok();
+            var actions = await _gameService.BetAsync(username, amount);
+            return Ok(actions);
         }
 
         [HttpPost("Fold")]
         public async Task<IActionResult> Fold()
         {
             var username = User.Identity?.Name; 
-            await _gameService.FoldAsync(username);
-            return Ok();
+            var actions = await _gameService.FoldAsync(username);
+            return Ok(actions);
         }
     }
 }

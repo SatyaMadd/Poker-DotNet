@@ -29,9 +29,14 @@ namespace pokerapi.Repositories
                 player.Ready = true;
                 player.Status = true;
                 player.Chips = 500;
-                player.Turn = false;
                 player.Score = 0;
+                if(player.TurnOrder==1){
+                    player.IsTurn = true;
+                }else{
+                    player.IsTurn = false;
+                }
             }
+            
             _context.UpdateRange(players);
             await _context.SaveChangesAsync();
         }
@@ -81,6 +86,15 @@ namespace pokerapi.Repositories
             _context.PlayerCards.Add(playerCard);
             await _context.SaveChangesAsync();
         }
+        public async Task ClearPlayerCards(int gameId)
+        {
+            var playerCards = await _context.PlayerCards.Where(pc => _context.Players.Any(p => p.Id == pc.PlayerId && p.GlobalVId == gameId)).ToListAsync();
+            if (playerCards != null)
+            {
+                _context.PlayerCards.RemoveRange(playerCards);
+                await _context.SaveChangesAsync();
+            }
+        }
         
         public async Task<List<CommCard>> GetCommCards(int gameId)
         {
@@ -110,11 +124,15 @@ namespace pokerapi.Repositories
 
         public async Task InitializeTurnOrder(int gameId)
         {
-            var globalV = await _context.GlobalVs.FindAsync(gameId);
-            var players = globalV.Players.OrderBy(p => Guid.NewGuid()).Select(p => p.Username).ToList();
-            globalV.Order = players;
-            globalV.Players.First().Turn = true;
-            _context.GlobalVs.Update(globalV);
+            var players = await _context.Players.Where(p => p.GlobalVId == gameId).ToListAsync();
+            var randomizedPlayers = players.OrderBy(p => Guid.NewGuid()).ToList();
+            var order = 1;
+            foreach (var player in randomizedPlayers)
+            {
+                player.TurnOrder = order;
+                _context.Players.Update(player);
+                order++;
+            }
             await _context.SaveChangesAsync();
         }
     }

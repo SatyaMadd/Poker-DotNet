@@ -1,8 +1,6 @@
-<!-- game.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Other head content... -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
 </head>
 <body>
@@ -16,7 +14,6 @@
             </tr>
         </thead>
         <tbody id="playerTableBody">
-            <!-- Player rows will be dynamically added here -->
         </tbody>
     </table>
     <h2>Community Cards</h2>
@@ -31,7 +28,13 @@
 
     <p>Pot: <span id="potValue"></span></p>
     <p>Round: <span id="roundValue"></span></p>
-
+    <br>
+    <h2>Player Actions</h2>
+    <button id="checkButton" onclick="check()">Check</button>
+    <button id="callButton" onclick="check()">Call</button>
+    <button id="betButton" onclick="bet(document.getElementById('betAmountInput').value)">Bet</button>
+    <input type="number" id="betAmountInput" placeholder="Bet Amount">
+    <button id="foldButton" onclick="fold()">Fold</button>
     <h2>Player Cards</h2>
     <table id="playerCardsTable">
         <thead>
@@ -41,17 +44,80 @@
             </tr>
         </thead>
     </table>
-    
+    <button id="leaveButton" onclick="leave()">Leave</button>
     <script>
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        };
+        const token = localStorage.getItem('jwtToken');
+        var username = parseJwt(token).sub;
+        let queue = [];
+        let isProcessing = false;
+
+        async function processQueue() {
+            if (isProcessing) return;
+            isProcessing = true; 
+
+            while (queue.length > 0) {
+                await refresh();
+                queue.shift();
+            }
+
+            isProcessing = false; 
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/gamehub", { accessTokenFactory: () => token })
+            .build();
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+        connection.on("Send", function (action) {
+            console.log("Received Send event");
+            if(action.actionName == "DeleteGame"){
+                window.location.href = '/join';
+            }else if(action.actionName == "Refresh"){
+                queue.push(true);
+                processQueue();
+            }
+        });
         window.onload = function() {
-            fetch('/Game/GetPlayers/', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                }
-            })
-            .then(response => response.json())
-            .then(players => {
+            refresh();  
+        }
+        async function refresh() {
+            console.log('Refreshing...');
+            try {
+                const playersResponse = await fetch('/Game/GetPlayers/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                    }
+                });
+                const players = await playersResponse.json();
+
+                const gameResponse = await fetch('/Game/GetGame/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                    }
+                });
+                const game = await gameResponse.json();
+
+
+                const playerCardsResponse = await fetch('/Game/GetPlayerCards/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+                    }
+                });
+                const playerCards = await playerCardsResponse.json();
+
                 let tbody = document.getElementById('playerTableBody');
                 tbody.innerHTML = '';
 
@@ -65,47 +131,41 @@
 
                     usernameCell.textContent = player.username;
                     chipsCell.textContent = player.chips;
-                    turnCell.textContent = player.turn ? 'Yes' : 'No';
+                    turnCell.textContent = player.isTurn ? 'Yes' : 'No';
                     statusCell.textContent = player.status ? 'Active' : 'Inactive';
                 });
-            })
-            .catch(error => console.error('Error:', error));
-            
-            fetch('/Game/GetGame/', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                }
-            })
-            .then(response => response.json())
-            .then(game => {
-                // Update community cards
+
                 const commCardsTable = document.getElementById('commCardsTable');
-                if(game.CommCards!=null){
-                    game.CommCards.forEach(card => {
-                        const row = commCardsTable.insertRow();
-                        row.innerHTML = `<td>${card.CardNumber}</td><td>${card.Suit}</td>`;
-                    });
+                while (commCardsTable.rows.length > 1) {
+                    commCardsTable.deleteRow(-1);
                 }
-                
+                game.commCards.forEach(card => {
+                    const row = commCardsTable.insertRow();
+                    row.innerHTML = `<td>${card.cardNumber}</td><td>${card.suit}</td>`;
+                });
 
-                // Update pot and round
-                document.getElementById('potValue').textContent = game.Pot;
-                document.getElementById('roundValue').textContent = game.Round;
+                document.getElementById('potValue').textContent = game.pot;
+                document.getElementById('roundValue').textContent = game.round;
 
-                
-            })
-            .catch(error => console.error('Error:', error));
-            fetch('/Game/GetPlayerCards/', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                }
-            })
-            .then(response => response.json())
-            .then(playerCards => {
+                const checkButton = document.getElementById('checkButton');
+                const callButton = document.getElementById('callButton');
+                const betButton = document.getElementById('betButton');
+                const betInput = document.getElementById('betAmountInput');
+                const foldButton = document.getElementById('foldButton');
+
+                const isPlayerTurn = players.some(player => player.username === username && player.isTurn);
+                const betHasOccurred = game.betHasOccurred;
+
+                checkButton.style.display = isPlayerTurn && !betHasOccurred ? 'block' : 'none';
+                callButton.style.display = isPlayerTurn && betHasOccurred ? 'block' : 'none';
+                betButton.style.display = isPlayerTurn ? 'block' : 'none';
+                betInput.style.display = isPlayerTurn ? 'block' : 'none';
+                foldButton.style.display = isPlayerTurn && betHasOccurred ? 'block' : 'none';
+
                 const playerCardsTable = document.getElementById('playerCardsTable');
-
+                while (playerCardsTable.rows.length > 1) {
+                    playerCardsTable.deleteRow(-1);
+                }
                 playerCards.forEach(card => {
                     const row = playerCardsTable.insertRow();
                     const cardNumberCell = row.insertCell();
@@ -114,15 +174,28 @@
                     cardNumberCell.textContent = card.cardNumber;
                     suitCell.textContent = card.suit;
                 });
-            })
-            .catch(error => console.error('Error fetching player cards:', error));
-        };
-        
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/gamehub") // Use the hub URL you mapped in Program.cs
-            .build();
-        
-        
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function check() {
+            connection.invoke("Check")
+                .catch(err => console.error(err.toString()));
+        }
+        function bet(amount) {
+            connection.invoke("Bet", parseInt(amount))
+                .catch(err => console.error(err.toString()));
+        }
+        function fold() {
+            connection.invoke("Fold")
+                .catch(err => console.error(err.toString()));
+        }
+        function leave() {
+            connection.invoke("Leave")
+                .catch(err => console.error(err.toString()));
+            window.location.href = '/join';
+        }
     </script>
 </body>
 </html>

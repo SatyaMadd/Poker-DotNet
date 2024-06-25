@@ -21,7 +21,8 @@ namespace pokerapi.Models
         public string Username { get; set; } = string.Empty;
         public bool IsAdmin { get; set; } 
         public bool Ready { get; set; }
-        public bool Turn { get; set; } 
+        public bool IsTurn { get; set; }
+        public int TurnOrder { get; set; } 
         public int Chips { get; set; }
         public bool Status { get; set; }
         public decimal Score { get; set; }
@@ -42,7 +43,6 @@ namespace pokerapi.Models
         public int Round { get; set; }
         public int Turns { get; set; }
         public int Pot { get; set; }
-        public ICollection<string> Order { get; set; } = [];
         public virtual ICollection<Player> Players { get; set; } = [];
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
         public virtual ICollection<DeckCard> DeckCards { get; set; } = [];
@@ -52,7 +52,6 @@ namespace pokerapi.Models
     {
         [Key]
         public int Id { get; set; }
-        // Replace Username with PlayerId
         public int CurrentAm { get; set; }
         public int TotalAm { get; set; }
 
@@ -96,6 +95,5 @@ namespace pokerapi.Models
         [ForeignKey("Player")]
         public int PlayerId { get; set; } 
     }
-
 }
 

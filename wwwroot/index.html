@@ -62,10 +62,8 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    // If the response is not ok, throw an error with the status
                     throw new Error(`HTTP error! status: ${response.status}`);
                 } else {
-                    // If the response is ok, process the data
                     return response.json();
                 }
             })

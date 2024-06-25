@@ -54,7 +54,6 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddDbContext<PokerContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Add JWT Authentication
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJoinRepository, JoinRepository>();
@@ -64,6 +63,7 @@ builder.Services.AddScoped<ILobbyService, LobbyService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IWinService, WinService>();
+builder.Services.AddScoped<IBotService, BotService>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -81,7 +81,20 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+        
     };
 });
 builder.Services.AddSignalR();
@@ -106,7 +119,7 @@ var rewriteOptions = new RewriteOptions()
 
 app.UseRewriter(rewriteOptions);
 
-app.MapHub<GameHub>("/gamehub"); 
+app.MapHub<GameHub>("/gamehub");
 
 app.UseHttpsRedirection();
 

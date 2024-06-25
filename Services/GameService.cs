@@ -1,3 +1,5 @@
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 using pokerapi.Interfaces;
 using pokerapi.Models;
 using SQLitePCL;
@@ -37,7 +39,7 @@ namespace pokerapi.Services{
             { 
                 Username = player.Username, 
                 Chips = player.Chips,
-                Turn = player.Turn,
+                IsTurn = player.IsTurn,
                 Status = player.Status
             }).ToList();
 
@@ -61,6 +63,7 @@ namespace pokerapi.Services{
                 Name = globalV.Name, 
                 Pot = globalV.Pot, 
                 Round = globalV.Round,
+                BetHasOccurred = (await _gameRepository.GetLatestGameBet(player.GlobalVId))!=0,
                 CommCards = globalV.CommCards
             };
 
@@ -76,126 +79,171 @@ namespace pokerapi.Services{
             return player.PlayerCards;
         }
 
-        public async Task CheckAsync(string username){
+        public async Task<IEnumerable<GameAction>> CheckAsync(string username){
+            var gameActions = new List<GameAction>();
             var player = await _lobbyRepository.GetPlayer(username);
             if (player==null){
-                return;
+                return gameActions;
             }
-            if(player.Turn==false){
-                return;
+            if(player.IsTurn==false){
+                return gameActions;
             }
             var globalV = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
             if (globalV == null)
             {
-                return;
+                return gameActions;
             }
-
+            
             var currentTurns = await _gameRepository.IncrementTurns(player.GlobalVId);
 
             var activePlayers = globalV.Players.Count(p => p.Status);
 
-            await PlaceBetAsync(player.Id, globalV.Id);
+            int betAmount = await PlaceBetAsync(player.Id, globalV.Id);
+            
+            gameActions.Add(new GameAction{
+                ActionName = "Check",
+                PlayerName = username,
+                Bet = betAmount
+            });
 
             if (currentTurns == activePlayers)
             {
-               await AdvanceRound(globalV.Id);
+                await AdvanceRound(globalV.Id);
+                gameActions.Add(new GameAction{
+                    ActionName = "RoundEnd"
+                });
             }
 
 
             if (globalV.Round > 4)
             {
-                await ResetGame(globalV.Id, activePlayers);
+                var newActions = await ResetGame(globalV.Id, activePlayers);
+                gameActions[1].ActionName = "GameEnd";
+                gameActions.AddRange(newActions);
+                return gameActions;
             }
 
-            await ChangeTurn(globalV.Id);
+            GameAction turnChange = await ChangeTurn(globalV.Id);
+            if(turnChange!=null){
+                gameActions.Add(turnChange);
+            }
+            return gameActions;
             
         }
 
-        public async Task BetAsync(string username, int betAmount)
+        public async Task<IEnumerable<GameAction>> BetAsync(string username, int betAmount)
         {
+            var gameActions = new List<GameAction>();
             var player = await _lobbyRepository.GetPlayer(username);
             if (player==null){
-                return;
+                return gameActions;
             }
-            if(player.Turn==false||player.Chips==0){
-                return;
+            if(player.IsTurn==false||player.Chips==0){
+                return gameActions;
             }
-            await _gameRepository.DeactivatePlayer(player.Id);
             var globalV = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
             if (globalV == null)
             {
-                return;
+                return gameActions;
             }
             var activePlayersWithChips = globalV.Players.Where(p => p.Status && p.Chips > 0).ToList();
             if (activePlayersWithChips.Count == 1)
             {
-                return;
+                return gameActions;
             }
             var currentBet = await _gameRepository.GetLatestGameBet(globalV.Id);
             if (currentBet >= betAmount)
             {
-                return;
+                return gameActions;
             }
             await _gameRepository.ResetTurns(player.GlobalVId);
             await _gameRepository.IncrementTurns(player.GlobalVId);
 
-            await PlaceBetAsync(player.Id, globalV.Id, betAmount);
-            await ChangeTurn(globalV.Id);
+            int amount = await PlaceBetAsync(player.Id, globalV.Id, betAmount);
+            gameActions.Add(new GameAction{
+                ActionName = "Bet",
+                PlayerName = username,
+                Bet = betAmount
+            });
+
+            GameAction turnChange = await ChangeTurn(globalV.Id);
+            if(turnChange!=null){
+                gameActions.Add(turnChange);
+            }
+            return gameActions;    
         }
 
-        public async Task FoldAsync(string username){
+        public async Task<IEnumerable<GameAction>> FoldAsync(string username){
+            var gameActions = new List<GameAction>();
             var player = await _lobbyRepository.GetPlayer(username);
             if (player==null){
-                return;
+                return gameActions;
             }
-            if(player.Turn==false||player.Chips==0){
-                return;
+            if(player.IsTurn==false||player.Chips==0){
+                return gameActions;
             }
-            await _gameRepository.DeactivatePlayer(player.Id);
             var globalV = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
             if (globalV == null)
             {
-                return;
-            }
-            var activePlayersWithChips = globalV.Players.Where(p => p.Status && p.Chips > 0).ToList();
-            if (activePlayersWithChips.Count == 1)
-            {
-                return;
+                return gameActions;
             }
 
+            await _gameRepository.DeactivatePlayer(player.Id);
+            
+            gameActions.Add(new GameAction{
+                ActionName = "Fold",
+                PlayerName = username,
+            });
+
+            globalV = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
+            
             var activePlayers = globalV.Players.Count(p => p.Status);
 
             if (activePlayers==1)
             {
-               await ResetGame(globalV.Id, activePlayers);
+                await ResetGame(globalV.Id, activePlayers);
+                gameActions.Add(new GameAction{
+                    ActionName = "GameEnd"
+                });
+                return gameActions;
             }
             else if (globalV.Turns == activePlayers)
             {
-               await AdvanceRound(globalV.Id);
+                await AdvanceRound(globalV.Id);
+                gameActions.Add(new GameAction{
+                    ActionName = "RoundEnd"
+                });
             }
 
             if (globalV.Round > 4)
             {
-                await ResetGame(globalV.Id, activePlayers);
+                var newActions = await ResetGame(globalV.Id, activePlayers);
+                gameActions[1].ActionName = "GameEnd";
+                gameActions.AddRange(newActions);
+                return gameActions;
             }
 
-            await ChangeTurn(globalV.Id);
+            GameAction turnChange = await ChangeTurn(globalV.Id);
+            if(turnChange!=null){
+                gameActions.Add(turnChange);
+            }
+            return gameActions;
             
         }
 
-        private async Task ChangeTurn(int gameId)
+        private async Task<GameAction> ChangeTurn(int gameId)
         {
             var globalV = await _lobbyRepository.GetGameByIdAsync(gameId);
             if (globalV == null)
             {
-                return;
+                return null;
             }
-            globalV.Players = globalV.Players.OrderBy(p => globalV.Order.ToList().IndexOf(p.Username)).ToList();
-            int currentIndex = globalV.Players.ToList().FindIndex(p => p.Turn == true);
-            var nextPlayer = globalV.Players.FirstOrDefault(p => p.Turn == true);
+            globalV.Players = globalV.Players.OrderBy(p => p.TurnOrder).ToList();
+            int currentIndex = globalV.Players.ToList().FindIndex(p => p.IsTurn == true);
+            var nextPlayer = globalV.Players.FirstOrDefault(p => p.IsTurn == true);
             if (nextPlayer == null)
             {
-                return;
+                return null;
             }
             await _gameRepository.SetPlayerTurn(nextPlayer.Id, false);
             
@@ -203,11 +251,9 @@ namespace pokerapi.Services{
             {
                 if (i >= globalV.Players.Count)
                 {
-                    i = -1; // it will become 0 at the start of the next loop iteration
+                    i = -1; 
                     continue;
                 }
-
-                // If the player is active, return this player
                 if (globalV.Players.ToList()[i].Status)
                 {
                     nextPlayer = globalV.Players.ToList()[i];
@@ -215,10 +261,24 @@ namespace pokerapi.Services{
                 }
             }
             await _gameRepository.SetPlayerTurn(nextPlayer.Id, true);
+            var activePlayersWithChips = globalV.Players.Where(p => p.Status && p.Chips > 0).ToList();
+            if(nextPlayer.Chips==0){
+                return new GameAction{
+                    ActionName = "AutoCheck",
+                    PlayerName = nextPlayer.Username
+                };
+            }else if(nextPlayer.Username.StartsWith("Bot")){
+                return new GameAction{
+                    ActionName = "BotTurn",
+                    PlayerName = nextPlayer.Username
+                };
+            }
+            return null;
         }
 
-        private async Task ResetGame(int gameId, int activePlayers)
+        private async Task<IEnumerable<GameAction>> ResetGame(int gameId, int activePlayers)
         {
+            var gameActions = new List<GameAction>();
             var globalV = await _lobbyRepository.GetGameByIdAsync(gameId);
             if(activePlayers==1){
                 var activePlayer = globalV.Players.FirstOrDefault(p => p.Status);
@@ -231,7 +291,6 @@ namespace pokerapi.Services{
                 var winners = globalV.Players.OrderByDescending(player => player.Score);
                 var players = globalV.Players;
 
-                // Calculate winnings for each winner
                 foreach (var winner in winners)
                 {
                     var winnerBet = await _gameRepository.GetTotalPlayerBet(winner.Id);
@@ -252,8 +311,24 @@ namespace pokerapi.Services{
                 }
             }
             
-            // Clean up
             await _gameRepository.SetAllPlayersActive(gameId);
+            foreach(var player in globalV.Players){
+                if(player.Username.StartsWith("BotLeave")){
+                    await _lobbyRepository.DeletePlayer(player.Username);
+                    gameActions.Add(new GameAction{
+                        ActionName = "RemoveBotLeave",
+                        PlayerName = player.Username
+                    });
+                    globalV = await _lobbyRepository.GetGameByIdAsync(gameId);
+                    if(globalV.Players.Count==1){
+                        await _lobbyRepository.DeleteGame(gameId);
+                            gameActions.Add(new GameAction{
+                            ActionName = "DeleteGame"
+                        });
+                        return gameActions;
+                    }
+                }
+            }
             await _gameRepository.ResetGameState(gameId);
             await _gameRepository.DeleteExtraBets(gameId);
             await _gameRepository.DeleteAllCommCards(gameId);
@@ -261,9 +336,10 @@ namespace pokerapi.Services{
             await _gameRepository.ResetAllScores(gameId);
             await _gameRepository.DeleteAllDeckCards(gameId);
 
-            // Deal new cards
             await _gameRepository.PopulateDeckCards(gameId);
+            await _lobbyRepository.ClearPlayerCards(gameId);
             await _lobbyService.DealCardsAsync(globalV.Players.ElementAt(1).Username, true);
+            return gameActions;
         }
         
         private async Task AdvanceRound(int gameId)
@@ -283,7 +359,7 @@ namespace pokerapi.Services{
                 await _gameRepository.AddCardToCommunity(card);
             }
         }
-        private async Task PlaceBetAsync(int playerId, int gameId, int? betAmount = null)
+        private async Task<int> PlaceBetAsync(int playerId, int gameId, int? betAmount = null)
         {
             var game = await _lobbyRepository.GetGameByIdAsync(gameId);
             var player = game.Players.FirstOrDefault(p => p.Id == playerId);
@@ -299,6 +375,7 @@ namespace pokerapi.Services{
             await _gameRepository.PlaceBet(playerId, gameId, currentGameBet, updatedTotalPlayerBet);
             await _gameRepository.ChangeChips(playerId, -adjustedBetAm);
             await _gameRepository.ChangePot(adjustedBetAm, gameId);
+            return adjustedBetAm;
         }
 
     }

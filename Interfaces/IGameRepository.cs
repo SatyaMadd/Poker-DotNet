@@ -28,5 +28,6 @@ namespace pokerapi.Interfaces{
         Task ResetAllScores(int gameId);
         Task ResetTurns(int gameId);
         Task DeactivatePlayer(int playerId);
+        Task<bool> TurnPlayerIntoLeaveBot(int playerId);
     }
 }

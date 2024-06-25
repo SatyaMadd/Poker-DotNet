@@ -2,38 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker Game</title>
 </head>
 <body>
     <header>
-        <h1>Welcome to the Poker Game</h1>
-        <!-- Navigation, user profile, and other header content -->
+        <h1>Join Lobby</h1>
     </header>
 
     <main id="game-container">
-        <!-- Game board and player information will be dynamically loaded here -->
     </main>
-
-    <footer>
-        <p>© 2024 Poker Game. All rights reserved.</p>
-    </footer>
-
-    <!-- Replace 'game.js' with the path to your game logic script -->
-    <!-- Authentication check script -->
-    <script>
-        
-    </script>
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Join Game</title>
-</head>
-<body>
     <h1>Available Games</h1>
     <div id="gamesList"></div>
 
@@ -74,7 +51,6 @@
                 alert('Please enter a game name.');
                 return;
             }
-
             fetch('/Join/CreateGame', {
                 method: 'POST',
                 headers: {
@@ -83,13 +59,13 @@
                 },
                 body: JSON.stringify(gameName)
             })
-            .then(response => response.json())
-            .then(game => {
-                joinGame(game.id);
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/lobby';
+                }
             });
         }
         function joinGame(gameId) {
-            // Join an existing game
             const token = localStorage.getItem('jwtToken');
             fetch('/Join/JoinGame/' + gameId, { 
                 method: 'POST',
@@ -106,11 +82,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Fetch available games
             displayAvailableGames();
             document.getElementById('createGame').addEventListener('click', createGame);
         });
     </script>
 </body>
 </html>
-

@@ -9,7 +9,6 @@ namespace pokerapi.Interfaces
         Task<IEnumerable<GlobalV>> GetAvailableGamesAsync();
         Task<GlobalV> CreateGameAsync(string name);
         Task<GlobalV?> GetGameByIdAsync(int gameId);
-        Task<bool> CheckPlayerExistsInGameAsync(int gameId, string username);
         Task AddPlayerToGameAsync(Player player);
     }
 }

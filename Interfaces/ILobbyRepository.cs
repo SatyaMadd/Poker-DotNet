@@ -16,6 +16,7 @@ namespace pokerapi.Interfaces
         Task<List<DeckCard>> GetDeckCards(int gameId);
         Task RemoveDeckCard(int cardId);
         Task AddPlayerCard(PlayerCard playerCard);
+        Task ClearPlayerCards(int gameId);
         Task<List<CommCard>> GetCommCards(int gameId);
         Task<List<PlayerCard>> GetPlayerCards(int playerId);
         Task InitializeBets(int gameId);

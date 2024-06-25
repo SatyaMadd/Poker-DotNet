@@ -33,18 +33,10 @@ namespace pokerapi.Repositories
         {
             return await _context.GlobalVs.FindAsync(gameId);
         }
-
-        public async Task<bool> CheckPlayerExistsInGameAsync(int gameId, string username)
-        {
-            return await _context.Players.AnyAsync(p => p.Username == username && p.GlobalVId == gameId);
-        }
-
         public async Task AddPlayerToGameAsync(Player player)
         {
             _context.Players.Add(player);
             await _context.SaveChangesAsync();
-        }
-
-        
+        } 
     }
 }

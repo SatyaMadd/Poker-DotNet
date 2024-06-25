@@ -10,7 +10,7 @@ namespace pokerapi.Models{
     {
         public string Username { get; set; } = string.Empty;
         public int Chips { get; set; }
-        public bool Turn { get; set; } 
+        public bool IsTurn { get; set; } 
         public bool Status { get; set; }
     }
     public class GameDTO
@@ -19,6 +19,7 @@ namespace pokerapi.Models{
         public string Name { get; set; } = string.Empty;
         public int Round { get; set; }
         public int Pot { get; set; }
+        public bool BetHasOccurred { get; set; }
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
     }
     public class Card
@@ -26,4 +27,12 @@ namespace pokerapi.Models{
         public int CardNumber { get; set; }
         public int Suit { get; set; }
     }
+    public class GameAction
+    {
+        public string ActionName { get; set; } = string.Empty;
+        public string PlayerName { get; set; } = string.Empty;
+        public int Bet { get; set; }
+        
+    }
+
 }

@@ -40,7 +40,7 @@ namespace pokerapi.Repositories{
             var player = await _context.Players.FindAsync(playerId);
             if (player != null)
             {
-                player.Turn = turn;
+                player.IsTurn = turn;
                 await _context.SaveChangesAsync();
             }
         }
@@ -280,8 +280,16 @@ namespace pokerapi.Repositories{
             }
         }
         
-        
+        public async Task<bool> TurnPlayerIntoLeaveBot(int playerId)
+        {
+            var player = await _context.Players.FirstOrDefaultAsync(p => p.Id == playerId);
+            if (player != null)
+            {
+                player.Username = $"BotLeave{playerId}";
+                await _context.SaveChangesAsync();
+                return player.IsTurn;
+            }
+            return false;
+        }
     }
 }
-
-
