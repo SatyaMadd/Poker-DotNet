@@ -20,10 +20,24 @@ namespace pokerapi.Models{
         public int Round { get; set; }
         public int Pot { get; set; }
         public bool BetHasOccurred { get; set; }
+        public bool Showdown { get; set; }
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
+    }
+    public class JoinGameDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public bool HasStarted { get; set; }
+        public int numPlayers { get; set; }
     }
     public class Card
     {
+        public int CardNumber { get; set; }
+        public int Suit { get; set; }
+    }
+    public class PlayerCardDTO
+    {
+        public string Username { get; set; } = string.Empty;
         public int CardNumber { get; set; }
         public int Suit { get; set; }
     }
@@ -32,7 +46,7 @@ namespace pokerapi.Models{
         public string ActionName { get; set; } = string.Empty;
         public string PlayerName { get; set; } = string.Empty;
         public int Bet { get; set; }
-        
+        public List<PlayerCard> PlayerCards { get; set; } = [];
     }
 
 }

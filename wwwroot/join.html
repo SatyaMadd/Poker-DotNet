@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Poker Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
 </head>
 <body>
     <header>
@@ -15,76 +16,77 @@
     <div id="gamesList"></div>
 
     <input type="text" id="gameName" placeholder="Enter Game Name" />
-    <button id="createGame">Create New Game</button>
+    <button id="createGame" onclick="createGame()">Create New Game</button>
 
     <script>
+        const token = localStorage.getItem('jwtToken');
         function isAuthenticated() {
-            const token = localStorage.getItem('jwtToken');
             return token !== null;
         }
-
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/joinhub", { accessTokenFactory: () => token })
+            .build();
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+        connection.on("GameListRefresh", function () {
+            refreshAvailableGames();
+        });
         window.onload = function() {
             if (!isAuthenticated()) {
                 window.location.href = '/home';
             }
         };
-        function displayAvailableGames() {
-            fetch('/Join/GetAvailableGames')
-                .then(response => response.json())
-                .then(games => {
-                    const list = document.getElementById('gamesList');
-                    games.forEach(game => {
-                        const item = document.createElement('div');
-                        item.innerHTML = `
-                            <p>Name: ${game.name}</p>
-                            <p>Players: ${game.players.length}</p>
-                            <button onclick="joinGame(${game.id})">Join</button>
-                        `;
-                        list.appendChild(item);
-                    });
+        async function refreshAvailableGames() {
+            try{
+                let games = await connection.invoke("GetAvailableGames");
+                const list = document.getElementById('gamesList');
+                list.innerHTML = '';
+                games.forEach(game => {
+                    const item = document.createElement('div');
+                    item.innerHTML = `
+                        <p>Name: ${game.name}</p>
+                        <p>Game In Progress: ${game.hasStarted}</p>
+                        ${!game.hasStarted && `<p>Players: ${game.numPlayers}</p>`}
+                        <button onclick="joinGame(${game.id})">Join</button>
+                    `;
+                    list.appendChild(item);
                 });
-        }
-
-        function createGame() {
-            var gameName = document.getElementById('gameName').value;
-            if (!gameName) {
-                alert('Please enter a game name.');
-                return;
+            }catch (error) {
+                console.error('Error:', error);
             }
-            fetch('/Join/CreateGame', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                },
-                body: JSON.stringify(gameName)
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = '/lobby';
-                }
-            });
-        }
-        function joinGame(gameId) {
-            const token = localStorage.getItem('jwtToken');
-            fetch('/Join/JoinGame/' + gameId, { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = '/lobby';
-                }
-            });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            displayAvailableGames();
-            document.getElementById('createGame').addEventListener('click', createGame);
-        });
+        async function createGame() {
+            try {
+                let gameName = document.getElementById('gameName').value;
+                if (!gameName) {
+                    alert('Please enter a game name.');
+                    return;
+                }
+                let response = await connection.invoke("CreateGame", gameName);
+                if(response){
+                    window.location.href = '/lobby';
+                }
+            }catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        async function joinGame(gameId) {
+            try{
+                let location = await connection.invoke("JoinGame", gameId);
+                if(location == null){
+                    return;
+                }
+                if (location=="Lobby") {
+                    window.location.href = '/lobby';
+                }else{
+                    window.location.href = '/waitingRoom';
+                }
+            }catch (error) {
+                console.error('Error:', error);
+            }
+        }
     </script>
 </body>
 </html>

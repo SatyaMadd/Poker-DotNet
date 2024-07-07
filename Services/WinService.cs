@@ -23,12 +23,10 @@ namespace pokerapi.Services
             {
                 return;
             }
-            var players = game.Players;
+            var players = game.Players.Where(p => p.Status);
 
-            // Get the community cards from the cards table
             var communityCards = await _lobbyRepository.GetCommCards(gameId);
 
-            // Prepare the players' hands
             foreach (var player in players)
             {
                 List<Card> hand =
@@ -37,25 +35,20 @@ namespace pokerapi.Services
                     .. communityCards.Select(c => new Card { CardNumber = c.CardNumber, Suit = c.Suit }),
                 ];
 
-                // Get all combinations of 5 cards
                 var combinations = Combinations(hand, 5);
 
-                // Initialize the score for the hand
                 decimal score = 0;
 
                 foreach (var combination in combinations)
                 {
-                    // Sort the cards by number
                     combination.Sort((a, b) => a.CardNumber - b.CardNumber);
 
-                    // Check if the combination is a royal flush
                     if (IsRoyalFlush(combination))
                     {
                         score = Math.Max(score, 9);
                         continue;
                     }
 
-                    // Check if the combination is a straight flush
                     if (IsStraightFlush(combination))
                     {
                         var highCard = GetHighCardForStraight(combination);
@@ -63,7 +56,6 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // Check if the combination is four of a kind (quads)
                     if (IsFourOfAKind(combination))
                     {
                         var quadCard = GetQuadCard(combination);
@@ -72,7 +64,6 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // Check if the combination is a full house
                     if (IsFullHouse(combination))
                     {
                         var tripleCard = GetTripleCard(combination);
@@ -81,14 +72,12 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // Check if the combination is a flush
                     if (IsFlush(combination))
                     {
                         score = Math.Max(score, 5 + CalculateCardScore(combination));
                         continue;
                     }
 
-                    // Check if the combination is a straight
                     if (IsStraight(combination))
                     {
                         var highCard = GetHighCardForStraight(combination);
@@ -96,7 +85,6 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // Check if the combination is three of a kind
                     if (IsThreeOfAKind(combination))
                     {
                         var tripleCard = GetTripleCard(combination);
@@ -105,7 +93,6 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // Check if the combination is two pair
                     if (IsTwoPair(combination))
                     {
                         var highPair = GetHighPair(combination);
@@ -115,7 +102,6 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // Check if the combination is a pair
                     if (IsPair(combination))
                     {
                         var pairCard = GetPairCard(combination);
@@ -124,11 +110,9 @@ namespace pokerapi.Services
                         continue;
                     }
 
-                    // If no other hand is found, it's a high card hand
                     score = Math.Max(score, CalculateCardScore(combination));
                 }
 
-                // Insert the winner into the winners table
                 await _gameRepository.UpdateScore(player.Id, score);
             }
         }
@@ -237,11 +221,6 @@ namespace pokerapi.Services
             return counts.FirstOrDefault(c => c.Value == 2).Key;
         }
 
-        private int GetHighCard(List<Card> hand, int excludeCard)
-        {
-            return hand.Where(card => card.CardNumber != excludeCard).Max(card => card.CardNumber);
-        }
-
         private int GetHighPair(List<Card> hand)
         {
             var counts = hand.GroupBy(card => card.CardNumber).ToDictionary(group => group.Key, group => group.Count());
@@ -285,8 +264,7 @@ namespace pokerapi.Services
             }
             return numbers.Max();
         }
+        
+    }
 
-
-            }
-
-        }
+}

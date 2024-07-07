@@ -44,6 +44,15 @@ namespace pokerapi.Services{
         public async Task<string> LeaveGameAsync(string username)
         {
             var player = await _lobbyRepository.GetPlayer(username);
+            if(player==null){
+                var waitingPlayer = await _lobbyRepository.GetWaitingRoomPlayer(username);
+                if(waitingPlayer==null){
+                    return null;
+                }else{
+                    await _lobbyRepository.RemoveWaitingRoomPlayer(waitingPlayer.Id);
+                    return "WaitingRoom";
+                }
+            }
             var game = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
             if (game != null)
             {
@@ -51,10 +60,13 @@ namespace pokerapi.Services{
                     if (game.Players.Count == 1){
                         await _lobbyRepository.DeletePlayer(username);
                         await _lobbyRepository.DeleteGame(game.Id);
+                        return "All";
                     } 
                     else{
                         await _lobbyRepository.DeletePlayer(username);
+                        return "Lobby";
                     }
+                    
                 }else{
                         bool isTurn = await _gameRepository.TurnPlayerIntoLeaveBot(player.Id);
                         if(isTurn){

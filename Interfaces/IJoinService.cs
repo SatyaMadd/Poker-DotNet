@@ -3,8 +3,8 @@ namespace pokerapi.Interfaces
 {
     public interface IJoinService
     {
-        Task<IEnumerable<GlobalV>> GetAvailableGamesAsync();
+        Task<IEnumerable<JoinGameDTO>> GetAvailableGamesAsync();
         Task<GlobalV> CreateGameAsync(string name);
-        Task JoinGameAsync(int gameId, string username);
+        Task<string> JoinGameAsync(int gameId, string username);
     }
 }

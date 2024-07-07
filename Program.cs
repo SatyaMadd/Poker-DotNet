@@ -64,6 +64,7 @@ builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IWinService, WinService>();
 builder.Services.AddScoped<IBotService, BotService>();
+builder.Services.AddScoped<IWaitingRoomService, WaitingRoomService>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -115,10 +116,12 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite(@"^join$", "join.html", skipRemainingRules: true)
     .AddRewrite(@"^home$", "index.html", skipRemainingRules: true)
     .AddRewrite(@"^lobby$", "lobby.html", skipRemainingRules: true)
+    .AddRewrite(@"^waitingRoom$", "waitingRoom.html", skipRemainingRules: true)
     .AddRewrite(@"^game$", "game.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
 
+app.MapHub<JoinHub>("/joinhub");
 app.MapHub<GameHub>("/gamehub");
 
 app.UseHttpsRedirection();

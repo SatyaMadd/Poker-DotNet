@@ -53,7 +53,7 @@ namespace pokerapi.Repositories{
                 await _context.SaveChangesAsync();
                 return game.Turns;
             }
-            return -1; // Return an error code or throw an exception
+            return -1;
         }
 
         public async Task ResetTurnsAndIncrementRound(int gameId)
@@ -74,6 +74,7 @@ namespace pokerapi.Repositories{
             {
                 game.Turns = 0;
                 game.Round = 1;
+                game.Showdown = false;
                 await _context.SaveChangesAsync();
             }
         }
@@ -97,7 +98,7 @@ namespace pokerapi.Repositories{
                 int index = random.Next(game.DeckCards.Count);
                 return game.DeckCards.ElementAt(index);
             }
-            return null; // Return null or throw an exception
+            return null; 
         }
 
         public async Task RemoveDeckCard(int cardId)
@@ -291,5 +292,37 @@ namespace pokerapi.Repositories{
             }
             return false;
         }
+        public async Task ChangeShowdown(int gameId, bool showdown)
+        {
+            var globalV = await _context.GlobalVs.FirstOrDefaultAsync(g => g.Id == gameId);
+            if (globalV != null)
+            {
+                globalV.Showdown = showdown;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task ShiftTurnOrder(int gameId)
+        {
+            var game = await _context.GlobalVs.Include(g => g.Players).FirstOrDefaultAsync(g => g.Id == gameId);
+            if (game != null)
+            {
+                var players = game.Players.OrderBy(p => p.TurnOrder).ToList();
+                var firstPlayer = players[0];
+                if (firstPlayer.TurnOrder != 1)
+                {
+                    firstPlayer.TurnOrder = 1;
+                }
+                else
+                {
+                    for (int i = 0; i < players.Count; i++)
+                    {
+                        players[i].TurnOrder = (i + 1) % players.Count + 1;
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+        }
+        
     }
 }

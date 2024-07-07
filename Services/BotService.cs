@@ -15,16 +15,20 @@ namespace pokerapi.Services{
         public async Task<IEnumerable<GameAction>> BotMove(string username){
             var game = await _gameService.GetGameAsync(username);
             if(game == null){
-                return Enumerable.Empty<GameAction>();
+                return [];
             }
             if(username.StartsWith("BotLeave")){
-                if(game.BetHasOccurred){
-                    return await _gameService.FoldAsync(username); 
+                if(game.Showdown){
+                    return await _gameService.MuckCardsAsync(username);
                 }else{
-                    return await _gameService.CheckAsync(username); 
-                }
+                    if(game.BetHasOccurred){
+                        return await _gameService.FoldAsync(username); 
+                    }else{
+                        return await _gameService.CheckAsync(username); 
+                    }
+                }   
             }
-            return Enumerable.Empty<GameAction>();
+            return [];
         }
     }
 }

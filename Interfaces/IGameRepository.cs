@@ -29,5 +29,7 @@ namespace pokerapi.Interfaces{
         Task ResetTurns(int gameId);
         Task DeactivatePlayer(int playerId);
         Task<bool> TurnPlayerIntoLeaveBot(int playerId);
+        Task ChangeShowdown(int gameId, bool showdown);
+        Task ShiftTurnOrder(int gameId);
     }
 }

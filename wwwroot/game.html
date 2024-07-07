@@ -35,10 +35,22 @@
     <button id="betButton" onclick="bet(document.getElementById('betAmountInput').value)">Bet</button>
     <input type="number" id="betAmountInput" placeholder="Bet Amount">
     <button id="foldButton" onclick="fold()">Fold</button>
+    <button id="showCardsButton" onclick="showCards()">Show Cards</button>
+    <button id="muckCardsButton" onclick="muckCards()">Muck Cards</button>
     <h2>Player Cards</h2>
     <table id="playerCardsTable">
         <thead>
             <tr>
+                <th>Value</th>
+                <th>Suit</th>
+            </tr>
+        </thead>
+    </table>
+    <h2>All Player Cards</h2>
+    <table id="allPlayerCardsTable">
+        <thead>
+            <tr>
+                <th>Username</th>
                 <th>Value</th>
                 <th>Suit</th>
             </tr>
@@ -82,41 +94,25 @@
             console.log("Received Send event");
             if(action.actionName == "DeleteGame"){
                 window.location.href = '/join';
-            }else if(action.actionName == "Refresh"){
-                queue.push(true);
-                processQueue();
             }
         });
-        window.onload = function() {
-            refresh();  
-        }
+        connection.on("Refresh", function () {
+            queue.push(true);
+            processQueue();
+        });
+
         async function refresh() {
             console.log('Refreshing...');
             try {
-                const playersResponse = await fetch('/Game/GetPlayers/', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                    }
-                });
-                const players = await playersResponse.json();
+                let response = await connection.invoke("Refresh");
 
-                const gameResponse = await fetch('/Game/GetGame/', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                    }
-                });
-                const game = await gameResponse.json();
-
-
-                const playerCardsResponse = await fetch('/Game/GetPlayerCards/', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-                    }
-                });
-                const playerCards = await playerCardsResponse.json();
+                const game = response.game;
+                if(game == null){
+                    window.location.href = '/join';
+                }
+                const players = await response.players;
+                const playerCards = await response.playerCards;
+                const allPlayerCards = await response.allPlayerCards;
 
                 let tbody = document.getElementById('playerTableBody');
                 tbody.innerHTML = '';
@@ -152,15 +148,45 @@
                 const betButton = document.getElementById('betButton');
                 const betInput = document.getElementById('betAmountInput');
                 const foldButton = document.getElementById('foldButton');
+                const showCardsButton = document.getElementById('showCardsButton');
+                const muckCardsButton = document.getElementById('muckCardsButton');
+                const allPlayerCardsTable = document.getElementById('allPlayerCardsTable');
 
                 const isPlayerTurn = players.some(player => player.username === username && player.isTurn);
                 const betHasOccurred = game.betHasOccurred;
 
-                checkButton.style.display = isPlayerTurn && !betHasOccurred ? 'block' : 'none';
-                callButton.style.display = isPlayerTurn && betHasOccurred ? 'block' : 'none';
-                betButton.style.display = isPlayerTurn ? 'block' : 'none';
-                betInput.style.display = isPlayerTurn ? 'block' : 'none';
-                foldButton.style.display = isPlayerTurn && betHasOccurred ? 'block' : 'none';
+                if (game.showdown) {
+                    checkButton.style.display = 'none';
+                    callButton.style.display = 'none';
+                    betButton.style.display = 'none';
+                    betInput.style.display = 'none';
+                    foldButton.style.display = 'none';
+                    showCardsButton.style.display = isPlayerTurn ? 'block' : 'none';
+                    muckCardsButton.style.display = isPlayerTurn ? 'block' : 'none';
+                    allPlayerCardsTable.style.display = 'block';
+                    while (allPlayerCardsTable.rows.length > 1) {
+                        allPlayerCardsTable.deleteRow(-1);
+                    }
+                    allPlayerCards.forEach(card => {
+                        const row = allPlayerCardsTable.insertRow();
+                        const usernameCell = row.insertCell();
+                        const cardNumberCell = row.insertCell();
+                        const suitCell = row.insertCell();
+
+                        usernameCell.textContent = card.username;
+                        cardNumberCell.textContent = card.cardNumber;
+                        suitCell.textContent = card.suit;
+                    });
+                } else {
+                    showCardsButton.style.display = 'none';
+                    muckCardsButton.style.display = 'none';
+                    allPlayerCardsTable.style.display = 'none';
+                    checkButton.style.display = isPlayerTurn && !betHasOccurred ? 'block' : 'none';
+                    callButton.style.display = isPlayerTurn && betHasOccurred ? 'block' : 'none';
+                    betButton.style.display = isPlayerTurn ? 'block' : 'none';
+                    betInput.style.display = isPlayerTurn ? 'block' : 'none';
+                    foldButton.style.display = isPlayerTurn && betHasOccurred ? 'block' : 'none';
+                }
 
                 const playerCardsTable = document.getElementById('playerCardsTable');
                 while (playerCardsTable.rows.length > 1) {
@@ -195,6 +221,14 @@
             connection.invoke("Leave")
                 .catch(err => console.error(err.toString()));
             window.location.href = '/join';
+        }
+        function showCards() {
+            connection.invoke("ShowCards")
+                .catch(err => console.error(err.toString()));
+        }
+        function muckCards() {
+            connection.invoke("MuckCards")
+                .catch(err => console.error(err.toString()));
         }
     </script>
 </body>

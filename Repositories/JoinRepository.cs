@@ -38,5 +38,16 @@ namespace pokerapi.Repositories
             _context.Players.Add(player);
             await _context.SaveChangesAsync();
         } 
+        public async Task AddPlayerToWaitingRoomAsync(int gameId, string username)
+        {
+            var player = new WaitingRoomPlayer
+            {
+                Username = username,
+                GlobalVId = gameId,
+                ChipsRequested = 500
+            };
+            _context.WaitingRoomPlayers.Add(player);
+            await _context.SaveChangesAsync();
+        } 
     }
 }

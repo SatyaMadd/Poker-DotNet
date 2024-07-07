@@ -23,7 +23,7 @@ namespace pokerapi.Controllers
         public async Task<IActionResult> GetPlayers()
         {
             var username = User.Identity?.Name; 
-            var players = await _gameService.GetPlayersAsync(username);
+            var players = await _gameService.GetAllPlayersAsync(username);
             if(players == null){
                 return NotFound();
             }
@@ -43,7 +43,7 @@ namespace pokerapi.Controllers
         public async Task<IActionResult> GetPlayerCards()
         {
             var username = User.Identity?.Name; 
-            var playerCards = await _gameService.GetCardsAsync(username);
+            var playerCards = await _gameService.GetPlayerCardsAsync(username);
             if(playerCards == null){
                 return NotFound();
             }

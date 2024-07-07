@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Lobby</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
 </head>
 <body>
     <h1>Game Lobby</h1>
@@ -19,17 +20,26 @@
 
             return JSON.parse(jsonPayload);
         };
-        const token = localStorage.getItem('jwtToken');
-        var username = parseJwt(token).sub;
-        function isAuthenticated() {
-            return token !== null;
-        }
-
         window.onload = function() {
             if (!isAuthenticated()) {
                 window.location.href = '/home';
             }
         };
+        const token = localStorage.getItem('jwtToken');
+        var username = parseJwt(token).sub;
+        function isAuthenticated() {
+            return token !== null;
+        }
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/joinhub", { accessTokenFactory: () => token })
+            .build();
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+        connection.on("LobbyRefresh", function () {
+            refreshPlayerList();
+        });
+        
 
         function refreshPlayerList() {
             fetch('/Lobby/GetPlayers', {
@@ -44,9 +54,9 @@
             })
             .then(players => {
                 var playerList = document.getElementById('playerList');
-                playerList.innerHTML = ''; // Clear the player list
-                var ready = players.some(player => player.isReady);
-                if(ready){
+                playerList.innerHTML = '';
+                var readyPlayers = players.some(player => player.isReady && player.username === username);
+                if(readyPlayers){
                     window.location.href = '/game';
                 }
                 var isAdmin = players.some(player => player.username === username && player.isAdmin);
@@ -86,46 +96,14 @@
             });
         }
 
-        document.getElementById('leaveButton').addEventListener('click', function() {
-            fetch('/Lobby/LeaveGame', {
-                method: 'POST',
-                headers: { 
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                window.location.href = '/join';
-            })
-            .catch(error => {
-                console.error('There has been a problem with your fetch operation:', error);
-            });
+        document.getElementById('leaveButton').addEventListener('click', async function() {
+            await connection.invoke("Leave");
+            window.location.href = '/join';
         });
 
-        document.getElementById('startButton').addEventListener('click', function() {
-            fetch('/Lobby/StartGame', {
-                method: 'POST',
-                headers: { 
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                refreshPlayerList();
-            })
-            .catch(error => {
-                console.error('There has been a problem with your fetch operation:', error);
-            });
+        document.getElementById('startButton').addEventListener('click', async function() {
+            await connection.invoke("StartGame");
         });
-
-        // Refresh the player list every 5 seconds
-        setInterval(refreshPlayerList, 5000);
     </script>
 </body>
 </html>

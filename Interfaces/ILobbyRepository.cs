@@ -21,5 +21,8 @@ namespace pokerapi.Interfaces
         Task<List<PlayerCard>> GetPlayerCards(int playerId);
         Task InitializeBets(int gameId);
         Task InitializeTurnOrder(int gameId);
+        Task<WaitingRoomPlayer> GetWaitingRoomPlayer(string username);
+        Task RemoveWaitingRoomPlayer(int playerId);
+        Task<IEnumerable<WaitingRoomPlayer>> GetAllWaitingRoomPlayers(int gameId);
     }
 }

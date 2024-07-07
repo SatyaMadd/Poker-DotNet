@@ -135,5 +135,22 @@ namespace pokerapi.Repositories
             }
             await _context.SaveChangesAsync();
         }
+        public async Task<WaitingRoomPlayer> GetWaitingRoomPlayer(string username)
+        {
+            return await _context.WaitingRoomPlayers.FirstOrDefaultAsync(p => p.Username == username);
+        }
+        public async Task<IEnumerable<WaitingRoomPlayer>> GetAllWaitingRoomPlayers(int gameId)
+        {
+            return await _context.WaitingRoomPlayers.Where(p => p.GlobalVId == gameId).ToListAsync();
+        }
+        public async Task RemoveWaitingRoomPlayer(int playerId)
+        {
+            var deletedPlayer = await _context.WaitingRoomPlayers.FirstOrDefaultAsync(p => p.Id == playerId);
+            if (deletedPlayer != null)
+            {
+                _context.WaitingRoomPlayers.Remove(deletedPlayer);
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

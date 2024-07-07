@@ -62,9 +62,12 @@ namespace pokerapi.Controllers
             {
                 return Unauthorized();
             }
-            await _joinService.JoinGameAsync(gameId, username);
+            var location = await _joinService.JoinGameAsync(gameId, username);
+            if(location == null){
+                return BadRequest("Game not found.");
+            }
             
-            return Ok();
+            return Ok(location);
         }
     }
 }

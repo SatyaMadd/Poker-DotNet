@@ -10,5 +10,6 @@ namespace pokerapi.Interfaces
         Task<GlobalV> CreateGameAsync(string name);
         Task<GlobalV?> GetGameByIdAsync(int gameId);
         Task AddPlayerToGameAsync(Player player);
+        Task AddPlayerToWaitingRoomAsync(int gameId, string username);
     }
 }

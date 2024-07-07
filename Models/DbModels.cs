@@ -43,6 +43,7 @@ namespace pokerapi.Models
         public int Round { get; set; }
         public int Turns { get; set; }
         public int Pot { get; set; }
+        public bool Showdown { get; set; }
         public virtual ICollection<Player> Players { get; set; } = [];
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
         public virtual ICollection<DeckCard> DeckCards { get; set; } = [];
@@ -94,6 +95,17 @@ namespace pokerapi.Models
 
         [ForeignKey("Player")]
         public int PlayerId { get; set; } 
+    }
+
+    public class WaitingRoomPlayer
+    {
+        [Key]
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public int ChipsRequested { get; set; }
+
+        [ForeignKey("GlobalV")]
+        public int GlobalVId { get; set; }
     }
 }
 
