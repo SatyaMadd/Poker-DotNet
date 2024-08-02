@@ -4,5 +4,6 @@ namespace pokerapi.Interfaces{
     {
         Task<WaitingRoomPlayer> GetWaitingRoomPlayer(string username);
         Task<IEnumerable<WaitingRoomPlayer>> GetAllWaitingRoomPlayers(int gameId);
+        Task AdmitPlayer(string username);
     }
 }

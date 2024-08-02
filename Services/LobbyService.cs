@@ -22,23 +22,58 @@ namespace pokerapi.Services{
                 await _lobbyRepository.InitializeTurnOrder(player.GlobalVId);
                 await _lobbyRepository.ReadyPlayers(player.GlobalVId);
                 await _lobbyRepository.InitializeBets(player.GlobalVId);
+                var globalV = await _lobbyRepository.GetGameByIdAsync(player.GlobalVId);
+                if(globalV==null){
+                    return;
+                }
+                var lastPlayer = globalV.Players.LastOrDefault(p => p.TurnOrder == globalV.Players.Max(pl => pl.TurnOrder));
+                if(lastPlayer==null){
+                    return;
+                }
+                var adjustedBetAm = Math.Min(10, lastPlayer.Chips);
+                await _gameRepository.PlaceBet(lastPlayer.Id, globalV.Id, 10, adjustedBetAm);
+                await _gameRepository.ChangeChips(lastPlayer.Id, adjustedBetAm*-1);
+                await _gameRepository.ChangePot(adjustedBetAm, globalV.Id);
             }
         }
 
-        public async Task KickPlayerAsync(string username, string kickedUsername)
+        public async Task<string> KickPlayerAsync(string username, string kickedUsername)
         {
-            var player = await _lobbyRepository.GetPlayer(username);
-            var kickedPlayer = await _lobbyRepository.GetPlayer(kickedUsername);
-            if(player==null || kickedPlayer==null){
-                return;
+            if(username==kickedUsername){
+                return null;
             }
-            if (player.IsAdmin)
+            var player = await _lobbyRepository.GetPlayer(username);
+            if(player==null){
+                return null;
+            }
+            if (!player.IsAdmin)
             {
-                if (!player.Ready){
-                    await _lobbyRepository.DeletePlayer(username);
-                }else{
-                    await _gameRepository.TurnPlayerIntoLeaveBot(kickedPlayer.Id);
+                return null;
+            }
+            if(kickedUsername.StartsWith("BotLeave")){
+                return null;
+            }
+            var kickedPlayer = await _lobbyRepository.GetPlayer(kickedUsername);
+            if(kickedPlayer==null){
+                var kickedWaitingPlayer = await _lobbyRepository.GetWaitingRoomPlayer(kickedUsername);
+                if(kickedWaitingPlayer==null){
+                    return null;
                 }
+                if(kickedWaitingPlayer.GlobalVId!=player.GlobalVId){
+                    return null;
+                }
+                await _lobbyRepository.RemoveWaitingRoomPlayer(kickedWaitingPlayer.Id);
+                return "WaitingRoom";
+            }
+            if(kickedPlayer.GlobalVId!=player.GlobalVId){
+                return null;
+            }
+            if (!player.Ready){
+                await _lobbyRepository.DeletePlayer(kickedUsername);
+                return "Lobby";
+            }else{
+                await _gameRepository.TurnPlayerIntoLeaveBot(kickedPlayer.Id);
+                return $"BotLeave{kickedPlayer.Id}";
             }
         }
         public async Task<string> LeaveGameAsync(string username)
@@ -64,14 +99,15 @@ namespace pokerapi.Services{
                     } 
                     else{
                         await _lobbyRepository.DeletePlayer(username);
+                        await _lobbyRepository.ReassignAdmin(game.Id);
                         return "Lobby";
                     }
-                    
                 }else{
-                        bool isTurn = await _gameRepository.TurnPlayerIntoLeaveBot(player.Id);
-                        if(isTurn){
-                            return $"BotLeave{player.Id}";
-                        }
+                    bool isTurn = await _gameRepository.TurnPlayerIntoLeaveBot(player.Id);
+                    await _lobbyRepository.ReassignAdmin(game.Id);
+                    if(isTurn){
+                        return $"BotLeave{player.Id}";
+                    }
                 }  
             }
             return null;

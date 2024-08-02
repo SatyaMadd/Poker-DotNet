@@ -12,6 +12,7 @@ namespace pokerapi.Models{
         public int Chips { get; set; }
         public bool IsTurn { get; set; } 
         public bool Status { get; set; }
+        public bool IsAdmin { get; set; }
     }
     public class GameDTO
     {
@@ -21,6 +22,7 @@ namespace pokerapi.Models{
         public int Pot { get; set; }
         public bool BetHasOccurred { get; set; }
         public bool Showdown { get; set; }
+        public DateTime LastMoveTime { get; set; }
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
     }
     public class JoinGameDTO

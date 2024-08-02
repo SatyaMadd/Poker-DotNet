@@ -12,5 +12,6 @@ namespace pokerapi.Interfaces{
         Task<IEnumerable<GameAction>> FoldAsync(string username);
         Task<IEnumerable<GameAction>> ShowCardsAsync(string username);
         Task<IEnumerable<GameAction>> MuckCardsAsync(string username);
+        Task<string> UpdateGameTimeAsync(int gameId);
     }
 }

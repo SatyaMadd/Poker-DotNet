@@ -34,13 +34,14 @@ namespace pokerapi.Hubs
                 if(player==null){
                     await Clients.Caller.SendAsync("GameListRefresh");
                     return;
-                }else if(!(player.IsAdmin&&player.Ready)){
+                }else if(!player.Ready){
                     await Groups.AddToGroupAsync(Context.ConnectionId, player.GlobalVId.ToString());
                     await Clients.Caller.SendAsync("LobbyRefresh");
                     return;
+                }else if(player.IsAdmin){
+                    await Groups.AddToGroupAsync(Context.ConnectionId, player.GlobalVId.ToString());
+                    await Clients.Caller.SendAsync("WaitingRoomRefresh");
                 }
-                await Groups.AddToGroupAsync(Context.ConnectionId, player.GlobalVId.ToString());
-                await Clients.Caller.SendAsync("WaitingRoomRefresh");
             }else{
                 await Groups.AddToGroupAsync(Context.ConnectionId, waitingPlayer.GlobalVId.ToString());
                 await Clients.Caller.SendAsync("WaitingRoomRefresh");
@@ -165,6 +166,41 @@ namespace pokerapi.Hubs
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId.ToString());
             }
         }
-        
+        public async Task Kick(string kickedUsername)
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null){
+                return;
+            }
+            var game = await _gameService.GetGameAsync(username);
+            if (game == null){
+                return;
+            }
+            string location = await _lobbyService.KickPlayerAsync(username, kickedUsername);
+            if(location == "Lobby"){
+                await Clients.Group(game.Id.ToString()).SendAsync("LobbyRefresh");
+            }else if(location == "WaitingRoom"){
+                await Clients.Group(game.Id.ToString()).SendAsync("WaitingRoomRefresh");
+            }
+        }
+        public async Task Admit(string admittedUsername)
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null)
+            {
+                return;
+            }
+            var player = await _gameService.GetPlayerAsync(username);
+            if (player == null)
+            {
+                return;
+            }
+            if(!player.IsAdmin)
+            {
+                return;
+            }
+            await _waitingRoomService.AdmitPlayer(admittedUsername);
+            await Clients.Group(player.GlobalVId.ToString()).SendAsync("WaitingRoomRefresh");
+        }
     }
 }

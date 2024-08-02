@@ -31,5 +31,6 @@ namespace pokerapi.Interfaces{
         Task<bool> TurnPlayerIntoLeaveBot(int playerId);
         Task ChangeShowdown(int gameId, bool showdown);
         Task ShiftTurnOrder(int gameId);
+        Task UpdateGameTime(int gameId, DateTime currentTime);
     }
 }

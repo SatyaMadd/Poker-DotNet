@@ -5,7 +5,7 @@ namespace pokerapi.Interfaces{
         Task ReadyPlayersAsync(string username);
         Task AddDeckCardsAsync(string username);
         Task DealCardsAsync(string username, bool inGame);
-        Task KickPlayerAsync(string username, string kickedUsername);
+        Task<string> KickPlayerAsync(string username, string kickedUsername);
         Task<string> LeaveGameAsync(string username);
         Task<IEnumerable<PlayerLobbyDTO>> GetPlayersAsync(string username);
     }

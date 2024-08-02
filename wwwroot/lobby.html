@@ -71,23 +71,7 @@
                         playerElement.appendChild(kickButton);
 
                         kickButton.addEventListener('click', function() {
-                            fetch('/Lobby/KickPlayer', {
-                                method: 'POST',
-                                headers: { 
-                                    'Authorization': 'Bearer ' + token,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(player.username)
-                            })
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error('Network response was not ok');
-                                }
-                                refreshPlayerList();
-                            })
-                            .catch(error => {
-                                console.error('There has been a problem with your fetch operation:', error);
-                            });
+                            connection.invoke("Kick", player.username);
                         });
                     }
                 });
