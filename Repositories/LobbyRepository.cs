@@ -121,6 +121,17 @@ namespace pokerapi.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task InitializePlayerBet(int playerId, int globalVId){
+            var bet = new Bet
+            {
+                PlayerId = playerId,
+                GlobalVId = globalVId,
+                CurrentAm = 0,
+                TotalAm = 0
+            };
+            _context.Bets.Add(bet);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task InitializeTurnOrder(int gameId)
         {
@@ -149,6 +160,17 @@ namespace pokerapi.Repositories
             if (deletedPlayer != null)
             {
                 _context.WaitingRoomPlayers.Remove(deletedPlayer);
+                await _context.SaveChangesAsync();
+            }
+        }
+        public async Task ReassignAdmin(int gameId)
+        {
+            var players = await _context.Players.Where(p => p.GlobalVId == gameId && !p.Username.StartsWith("Bot")).OrderBy(p => p.Id).ToListAsync();
+            if (players.Any())
+            {
+                var adminPlayer = players.First();
+                adminPlayer.IsAdmin = true;
+                _context.Players.UpdateRange(players);
                 await _context.SaveChangesAsync();
             }
         }

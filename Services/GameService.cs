@@ -2,6 +2,8 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using pokerapi.Interfaces;
 using pokerapi.Models;
+using pokerapi.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using SQLitePCL;
 using System.Collections.Concurrent;
 
@@ -13,8 +15,8 @@ namespace pokerapi.Services{
         private readonly IGameRepository _gameRepository;
         private static ConcurrentDictionary<string, SemaphoreSlim> _playerLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
 
-        private readonly LobbyService _lobbyService ;
-        private readonly WinService _winService ;
+        private readonly LobbyService _lobbyService;
+        private readonly WinService _winService;
 
         public GameService(ILobbyRepository lobbyRepository, IGameRepository gameRepository)
         {
@@ -45,9 +47,10 @@ namespace pokerapi.Services{
                 Username = player.Username, 
                 Chips = player.Chips,
                 IsTurn = player.IsTurn,
-                Status = player.Status
+                Status = player.Status,
+                IsAdmin = player.IsAdmin
             }).ToList();
-
+            
             return players;
         }
         public async Task<GameDTO> GetGameAsync(string username)
@@ -70,7 +73,8 @@ namespace pokerapi.Services{
                 Round = globalV.Round,
                 BetHasOccurred = (await _gameRepository.GetLatestGameBet(player.GlobalVId))!=0,
                 Showdown = globalV.Showdown,
-                CommCards = globalV.CommCards
+                CommCards = globalV.CommCards,
+                LastMoveTime = globalV.LastMoveTime
             };
 
             return game;
@@ -350,7 +354,7 @@ namespace pokerapi.Services{
             }
             var currPlayer = globalV.Players.FirstOrDefault(p => p.IsTurn);
             await _gameRepository.SetPlayerTurn(currPlayer.Id, false);
-
+            await _gameRepository.ResetTurnsAndIncrementRound(gameId);
             globalV.Players = globalV.Players.OrderBy(p => p.TurnOrder).ToList();
             var firstPlayer = globalV.Players.FirstOrDefault(p => p.Status);
             await _gameRepository.SetPlayerTurn(firstPlayer.Id, true);
@@ -491,23 +495,29 @@ namespace pokerapi.Services{
                 await _gameRepository.ChangeChips(winner.Id, win);
             }
             await _gameRepository.SetAllPlayersActive(gameId);
+            var playersToRemove = new List<Player>();
             foreach(var player in globalV.Players){
                 if(player.Username.StartsWith("BotLeave")){
-                    await _lobbyRepository.DeletePlayer(player.Username);
-                    gameActions.Add(new GameAction{
-                        ActionName = "RemoveBotLeave",
-                        PlayerName = player.Username
-                    });
-                    globalV = await _lobbyRepository.GetGameByIdAsync(gameId);
-                    if(globalV.Players.Count==1){
-                        await _lobbyRepository.DeleteGame(gameId);
-                            gameActions.Add(new GameAction{
-                            ActionName = "DeleteGame"
-                        });
-                        return gameActions;
-                    }
+                    playersToRemove.Add(player);
                 }
             }
+
+            foreach(var player in playersToRemove){
+                await _lobbyRepository.DeletePlayer(player.Username);
+                gameActions.Add(new GameAction{
+                    ActionName = "RemoveBotLeave",
+                    PlayerName = player.Username
+                });
+                globalV = await _lobbyRepository.GetGameByIdAsync(gameId);
+                if(globalV.Players.Count==1){
+                    await _lobbyRepository.DeleteGame(gameId);
+                    gameActions.Add(new GameAction{
+                        ActionName = "DeleteGame"
+                    });
+                    return gameActions;
+                }
+            }
+
             await _gameRepository.ResetGameState(gameId);
             await _gameRepository.DeleteExtraBets(gameId);
             await _gameRepository.DeleteAllCommCards(gameId);
@@ -524,12 +534,29 @@ namespace pokerapi.Services{
             var firstPlayer = globalV.Players.FirstOrDefault(p => p.TurnOrder == 1);
             await _gameRepository.SetPlayerTurn(firstPlayer.Id, true);
 
+            var lastPlayer = globalV.Players.LastOrDefault(p => p.TurnOrder == globalV.Players.Max(pl => pl.TurnOrder));
+            var adjustedBetAm = Math.Min(10, lastPlayer.Chips);
+            await _gameRepository.PlaceBet(lastPlayer.Id, gameId, 10, adjustedBetAm);
+            await _gameRepository.ChangeChips(lastPlayer.Id, adjustedBetAm*-1);
+            await _gameRepository.ChangePot(adjustedBetAm, gameId);
+
             await _gameRepository.PopulateDeckCards(gameId);
             await _lobbyRepository.ClearPlayerCards(gameId);
             await _lobbyService.DealCardsAsync(globalV.Players.ElementAt(1).Username, true);
             return gameActions;
 
-        }        
+        }   
+        public async Task<string> UpdateGameTimeAsync(int gameId)
+        {
+            DateTime currentTime = DateTime.Now;
+            var game = await _lobbyRepository.GetGameByIdAsync(gameId);
+            if(game==null){
+                return null;
+            }
+            await _gameRepository.UpdateGameTime(gameId, currentTime);
+            var currentPlayer = game.Players.FirstOrDefault(p => p.IsTurn);
+            return currentPlayer.Username;
+        }
     }
 }
 

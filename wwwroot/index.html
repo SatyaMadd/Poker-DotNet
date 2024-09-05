@@ -4,31 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker App - Register & Login</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h2>Register</h2>
-    <form id="registerForm">
-        <input type="text" id="registerUsername" placeholder="Username" required>
-        <br>
-        <input type="password" id="registerPassword" placeholder="Password" required>
-        <br>
-        <button type="submit">Register</button>
-    </form>
+    <div class="container">
+        <h2>Register</h2>
+        <form id="registerForm">
+            <input type="text" id="registerUsername" placeholder="Username" required>
+            <br>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <br>
+            <button type="submit">Register</button>
+        </form>
+        <div id="registerError" class="error-message"></div>
 
-    <h2>Login</h2>
-    <form id="loginForm">
-        <input type="text" id="loginUsername" placeholder="Username" required>
-        <br>
-        <input type="password" id="loginPassword" placeholder="Password" required>
-        <br>
-        <button type="submit">Login</button>
-    </form>
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="text" id="loginUsername" placeholder="Username" required>
+            <br>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <br>
+            <button type="submit">Login</button>
+        </form>
+        <div id="loginError" class="error-message"></div>
+    </div>
 
     <script>
         document.getElementById('registerForm').addEventListener('submit', function(event) {
             event.preventDefault();
             var username = document.getElementById('registerUsername').value;
             var password = document.getElementById('registerPassword').value;
+            var errorDiv = document.getElementById('registerError');
 
             fetch('/Auth/register', {
                 method: 'POST',
@@ -39,12 +45,16 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Success:', data);
-                alert('Registration successful!');
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                } else {
+                    console.log('Success:', data);
+                    errorDiv.textContent = data.message || 'Registration successful!';
+                }
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert('Registration failed.');
+                errorDiv.textContent = "Couldn't register.";
             });
         });
 
@@ -52,6 +62,7 @@
             event.preventDefault();
             var username = document.getElementById('loginUsername').value;
             var password = document.getElementById('loginPassword').value;
+            var errorDiv = document.getElementById('loginError');
 
             fetch('/Auth/login', {
                 method: 'POST',
@@ -68,17 +79,18 @@
                 }
             })
             .then(data => {
-                console.log('Success:', data);
-                alert('Login successful!');
-                // You can store the token in localStorage and redirect if needed
-                localStorage.setItem('jwtToken', data.token);
-                // window.location.href = '/some-protected-route';
-                window.location.href = data.redirectUrl;
-
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                } else {
+                    console.log('Success:', data);
+                    errorDiv.textContent = '';
+                    localStorage.setItem('jwtToken', data.token);
+                    window.location.href = data.redirectUrl;
+                }
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert('Login failed.');
+                errorDiv.textContent = 'Login failed.';
             });
         });
     </script>

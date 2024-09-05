@@ -65,6 +65,7 @@ builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IWinService, WinService>();
 builder.Services.AddScoped<IBotService, BotService>();
 builder.Services.AddScoped<IWaitingRoomService, WaitingRoomService>();
+builder.Services.AddScoped<IHubInteractionService, HubInteractionService>();
 
 builder.Services.AddAuthentication(options =>
 {
