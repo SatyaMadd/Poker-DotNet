@@ -73,6 +73,16 @@ namespace pokerapi.Hubs
             return await _joinService.GetAvailableGamesAsync();
         }
         
+        public async Task<IEnumerable<PlayerLobbyDTO>> GetPlayers()
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null)
+            {
+                return null;
+            }
+            return await _lobbyService.GetPlayersAsync(username);
+        }
+
         public async Task<bool> CreateGame(string gameName)
         {
             var username = Context.User?.Identity?.Name;

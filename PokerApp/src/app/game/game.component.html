@@ -1,0 +1,88 @@
+<h1>Game</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Chips</th>
+      <th>Turn</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let player of players">
+      <td>{{ player.username }}</td>
+      <td>{{ player.chips }}</td>
+      <td>{{ player.isTurn ? 'Yes' : 'No' }}</td>
+      <td>{{ player.status ? 'Active' : 'Inactive' }}</td>
+      <td>
+        <button *ngIf="isAdmin && player.username !== username" (click)="gameKick(player.username)">Kick</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Community Cards</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Value</th>
+      <th>Suit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let card of commCards">
+      <td>{{ card.cardNumber }}</td>
+      <td>{{ card.suit }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Pot: {{ pot }}</p>
+<p>Round: {{ round }}</p>
+
+<h2>Player Actions</h2>
+<button (click)="check()" [disabled]="!isPlayerTurn || betHasOccurred">Check</button>
+<button (click)="call()" [disabled]="!isPlayerTurn || !betHasOccurred">Call</button>
+<button (click)="bet(betAmountInput.value)" [disabled]="!isPlayerTurn">Bet</button>
+<input type="number" #betAmountInput placeholder="Bet Amount">
+<button (click)="fold()" [disabled]="!isPlayerTurn">Fold</button>
+<button (click)="showCards()" [disabled]="!isPlayerTurn || !showdown">Show Cards</button>
+<button (click)="muckCards()" [disabled]="!isPlayerTurn || !showdown">Muck Cards</button>
+
+<h2>Player Cards</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Value</th>
+      <th>Suit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let card of playerCards">
+      <td>{{ card.cardNumber }}</td>
+      <td>{{ card.suit }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>All Player Cards</h2>
+<table *ngIf="showdown">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Value</th>
+      <th>Suit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let card of allPlayerCards">
+      <td>{{ card.username }}</td>
+      <td>{{ card.cardNumber }}</td>
+      <td>{{ card.suit }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<button (click)="leaveGame()">Leave</button>
+<div id="waitingPlayerList"></div>

@@ -1,0 +1,20 @@
+<!-- src/app/join/join.component.html -->
+<header>
+    <h1>Join Lobby</h1>
+  </header>
+  
+  <main id="game-container">
+  </main>
+  <h1>Available Games</h1>
+  <div id="gamesList">
+    <div *ngFor="let game of games">
+      <p>Name: {{ game.name }}</p>
+      <p>Game In Progress: {{ game.hasStarted }}</p>
+      <p *ngIf="!game.hasStarted">Players: {{ game.numPlayers }}</p>
+      <button (click)="joinGame(game.id)">Join</button>
+    </div>
+  </div>
+  
+  <input type="text" id="gameName" placeholder="Enter Game Name" #gameNameInput />
+  <button (click)="createGame(gameNameInput.value)">Create New Game</button>
+  

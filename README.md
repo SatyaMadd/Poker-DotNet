@@ -2,6 +2,64 @@
 
 ## Overview
 This project is a real-time poker game application developed using .NET technologies. It leverages SignalR for seamless communication betIen the server and clients, ensuring a responsive and interactive user experience. The application is structured around a hub-based architecture, with a focus on modularity, scalability, and security.
+## Getting Started
+
+### Prerequisites
+- .NET 6.0 SDK
+- SQL Server
+- Node.js (for client-side development)
+
+### Installation
+1. Clone the repository:
+
+```bash
+git clone https://github.com/SatyaMadd/Poker-DotNet.git
+```
+2. Navigate to the project directory:
+
+```bash
+cd Poker-DotNet
+```
+3. Restore the .NET dependencies:
+
+```bash
+dotnet restore
+```
+
+4. Build the Database
+
+```bash
+dotnet ef database update
+```
+
+5. Build the project:
+
+```bash
+dotnet build
+```
+6. Run the application:
+
+```bash
+dotnet run
+```
+
+### Running the Client
+1. Navigate to the client directory:
+
+```bash
+cd client
+```
+2. Install the dependencies:
+
+```bash
+npm install
+```
+
+3. Start the client:
+
+```bash
+npm start
+```
 
 ## Key Components
 
@@ -182,57 +240,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 ```
 
-## Getting Started
-
-### Prerequisites
-- .NET 6.0 SDK
-- SQL Server
-- Node.js (for client-side development)
-
-### Installation
-1. Clone the repository:
-
-```bash
-git clone https://github.com/SatyaMadd/Poker-DotNet.git
-```
-2. Navigate to the project directory:
-
-```bash
-cd Poker-DotNet
-```
-3. Restore the .NET dependencies:
-
-```bash
-dotnet restore
-```
-4. Build the project:
-
-```bash
-dotnet build
-```
-5. Run the application:
-
-```bash
-dotnet run
-```
-
-### Running the Client
-1. Navigate to the client directory:
-
-```bash
-cd client
-```
-2. Install the dependencies:
-
-```bash
-npm install
-```
-
-3. Start the client:
-
-```bash
-npm start
-```
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
