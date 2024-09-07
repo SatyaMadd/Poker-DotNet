@@ -13,7 +13,7 @@ export class SignalRService {
     console.log('Token:', token); 
 
     this.joinConnection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5059/joinhub', {
+      .withUrl('https://poker-api-gngmc9cphsfjeeha.eastus-01.azurewebsites.net/joinhub', {
         accessTokenFactory: () => {
           console.log('Access Token Factory called');
           return token ? token : '';
@@ -26,7 +26,7 @@ export class SignalRService {
     });
 
     this.gameConnection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5059/gamehub', {
+      .withUrl('https://poker-api-gngmc9cphsfjeeha.eastus-01.azurewebsites.net/gamehub', {
         accessTokenFactory: () => {
           console.log('Access Token Factory called');
           return token ? token : '';

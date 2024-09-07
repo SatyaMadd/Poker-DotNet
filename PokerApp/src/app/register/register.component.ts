@@ -15,6 +15,7 @@ export class RegisterComponent {
   registerUsername: string = '';
   registerPassword: string = '';
   registerError: string = '';
+  
 
   constructor(private authService: AuthService) {}
 

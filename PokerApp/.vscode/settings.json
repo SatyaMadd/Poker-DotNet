@@ -2,5 +2,7 @@
     "appService.zipIgnorePattern": [
         "node_modules{,/**}",
         ".vscode{,/**}"
-    ]
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/cf88cb6a-a3be-4d56-9dd3-00fafbc3bcc4/resourceGroups/PokerApp/providers/Microsoft.Web/sites/poker-app",
+    "appService.deploySubpath": "dist\\poker-app\\browser"
 }

@@ -1,11 +1,16 @@
 <div class="container">
-    <h2>Register</h2>
-    <form (ngSubmit)="onRegister()">
-        <input type="text" [(ngModel)]="registerUsername" name="registerUsername" placeholder="Username" required>
-        <br>
-        <input type="password" [(ngModel)]="registerPassword" name="registerPassword" placeholder="Password" required>
-        <br>
-        <button type="submit">Register</button>
-    </form>
-    <div *ngIf="registerError" class="error-message">{{ registerError }}</div>
+  <h2 class="text-center mb-4">Register</h2>
+  <form (ngSubmit)="onRegister()" class="col-md-6 offset-md-3 col-lg-4 offset-lg-4">
+    <div class="mb-3">
+      <label for="registerUsername" class="form-label">Username</label>
+      <input type="text" class="form-control" id="registerUsername" [(ngModel)]="registerUsername" name="registerUsername" placeholder="Enter username" required>
+    </div>
+    <div class="mb-3">
+      <label for="registerPassword" class="form-label">Password</label>
+      <input type="password" class="form-control" id="registerPassword" [(ngModel)]="registerPassword" name="registerPassword" placeholder="Enter password" required>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Register</button>
+    <div *ngIf="registerError" class="alert alert-danger mt-3" role="alert">{{ registerError }}</div>
+  </form>
 </div>
+

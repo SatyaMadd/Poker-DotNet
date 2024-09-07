@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service'; 
+import { Router } from '@angular/router'; // Import the Router
+
 
 @Component({
   selector: 'app-login',
@@ -15,7 +17,7 @@ export class LoginComponent {
   loginPassword: string = '';
   loginError: string = '';
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   onLogin() {
     this.authService.login(this.loginUsername, this.loginPassword)
@@ -27,7 +29,8 @@ export class LoginComponent {
             console.log('Success:', data);
             this.loginError = '';
             localStorage.setItem('jwtToken', data.token);
-            window.location.href = data.redirectUrl;
+            //window.location.href = data.redirectUrl;
+            this.router.navigate([data.redirectUrl]);
           }
         },
         error: (error) => {

@@ -1,11 +1,23 @@
-<div class="container">
-    <h2>Login</h2>
-    <form (ngSubmit)="onLogin()">
-        <input type="text" [(ngModel)]="loginUsername" name="loginUsername" placeholder="Username" required>
-        <br>
-        <input type="password" [(ngModel)]="loginPassword" name="loginPassword" placeholder="Password" required>
-        <br>
-        <button type="submit">Login</button>
-    </form>
-    <div *ngIf="loginError" class="error-message">{{ loginError }}</div>
+<div class="container py-5" >
+  <div class="row justify-content-center align-items-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Login</h2>
+          <form (ngSubmit)="onLogin()">
+            <div class="mb-3">
+              <label for="loginUsername" class="form-label">Username</label>
+              <input type="text" class="form-control" id="loginUsername" [(ngModel)]="loginUsername" name="loginUsername" placeholder="Enter username" required>
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="loginPassword" [(ngModel)]="loginPassword" name="loginPassword" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+            <div *ngIf="loginError" class="alert alert-danger mt-3" role="alert">{{ loginError }}</div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
