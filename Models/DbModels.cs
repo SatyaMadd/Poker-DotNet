@@ -44,6 +44,7 @@ namespace pokerapi.Models
         public int Turns { get; set; }
         public int Pot { get; set; }
         public bool Showdown { get; set; }
+        public DateTime LastMoveTime { get; set; }
         public virtual ICollection<Player> Players { get; set; } = [];
         public virtual ICollection<CommCard> CommCards { get; set; } = [];
         public virtual ICollection<DeckCard> DeckCards { get; set; } = [];

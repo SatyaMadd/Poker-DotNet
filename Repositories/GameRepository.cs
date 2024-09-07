@@ -287,6 +287,7 @@ namespace pokerapi.Repositories{
             if (player != null)
             {
                 player.Username = $"BotLeave{playerId}";
+                player.IsAdmin = false;
                 await _context.SaveChangesAsync();
                 return player.IsTurn;
             }
@@ -320,6 +321,16 @@ namespace pokerapi.Repositories{
                         players[i].TurnOrder = (i + 1) % players.Count + 1;
                     }
                 }
+                await _context.SaveChangesAsync();
+            }
+        }
+        
+        public async Task UpdateGameTime(int gameId, DateTime time)
+        {
+            var game = await _context.GlobalVs.FirstOrDefaultAsync(g => g.Id == gameId);
+            if (game != null)
+            {
+                game.LastMoveTime = time;
                 await _context.SaveChangesAsync();
             }
         }

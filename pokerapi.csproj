@@ -9,11 +9,20 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="8.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4" />
   </ItemGroup>
 
+  <Target Name="PublishAngular" AfterTargets="ComputeFilesToPublish">
+    <Exec Command="npm install" WorkingDirectory="$(ProjectDir)ClientApp" />
+    <Exec Command="ng build --prod" WorkingDirectory="$(ProjectDir)ClientApp" />
+    <ItemGroup>
+      <DistFiles Include="$(ProjectDir)ClientApp\dist\**\*" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" RelativePath="ClientApp\dist\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

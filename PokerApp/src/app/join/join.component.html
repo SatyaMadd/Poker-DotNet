@@ -1,0 +1,36 @@
+<!-- src/app/join/join.component.html -->
+
+<main id="game-container">
+</main>
+<h1>Available Games</h1>
+<div id="gamesList">
+
+  <div class="container py-2">
+    <div class="row">
+      <div class="col-md-4 py-2" *ngFor="let game of games"> 
+        <div class="card shadow-sm mb-3 h-100"> 
+          <div class="card-header text-center">
+            {{ game.name }}
+          </div>
+          <div class="card-body d-flex flex-column justify-content-between"> 
+            <div>
+              <p>Game In Progress: {{ game.hasStarted ? 'Yes' : 'No' }}</p>
+              <p *ngIf="!game.hasStarted">Players: {{ game.numPlayers }}</p>
+            </div>
+            <button class="btn btn-primary w-100" (click)="joinGame(game.id)">Join</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container py-2">
+    <div class="row justify-content-center"> 
+      <div class="col-md-6"> 
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" id="gameName" placeholder="Enter Game Name" #gameNameInput />
+          <button class="btn btn-success" type="button" (click)="createGame(gameNameInput.value)">Create New Game</button>
+        </div>
+      </div>
+    </div>
+  </div>

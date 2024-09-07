@@ -1,0 +1,19 @@
+<h1>Game Lobby</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let player of players">
+      <td>{{ player.username }} <span *ngIf="player.isAdmin">(Admin)</span></td>
+      <td>
+        <button *ngIf="isAdmin && player.username !== username" (click)="kickPlayer(player.username)">Kick</button>
+      </td>      
+    </tr>
+  </tbody>
+</table>
+<button id="leaveButton" (click)="leaveGame()">Leave Game</button>
+<button id="startButton" style="display: none;" (click)="startGame()">Start Game</button>

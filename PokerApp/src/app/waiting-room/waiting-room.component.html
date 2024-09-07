@@ -1,0 +1,7 @@
+<h1>Waiting Room</h1>
+<div id="playerList">
+  <div *ngFor="let player of players">
+    {{ player.username }}
+  </div>
+</div>
+<button id="leaveButton" (click)="leaveGame()">Leave Game</button>

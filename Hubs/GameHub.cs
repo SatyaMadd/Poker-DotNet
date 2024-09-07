@@ -9,15 +9,15 @@ namespace pokerapi.Hubs
     [Authorize]
     public class GameHub : Hub
     {
-        private readonly ILobbyService _lobbyService;
+        private readonly IHubInteractionService _hubInteractionService;
         private readonly IGameService _gameService;
-        private readonly IBotService _botService;
+        private readonly ILobbyService _lobbyService;
 
-        public GameHub(ILobbyService lobbyService, IGameService gameService, IBotService botService)
+        public GameHub(IHubInteractionService hubInteractionService, IGameService gameService, ILobbyService lobbyService)
         {
-            _lobbyService = lobbyService;
+            _hubInteractionService = hubInteractionService;
             _gameService = gameService;
-            _botService = botService;
+            _lobbyService = lobbyService;
         }
 
         public override async Task OnConnectedAsync()
@@ -34,7 +34,53 @@ namespace pokerapi.Hubs
             await Clients.Caller.SendAsync("Refresh");
             await base.OnConnectedAsync();
         }
-        private async Task ExecuteAction(Func<string, int, Task<IEnumerable<GameAction>>> actionFunc, int amount = 0)
+
+        public async Task Check()
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null){
+                return;
+            }
+            _hubInteractionService.ExecuteAction((username, _) => _gameService.CheckAsync(username), username);
+        }
+
+        public async Task Bet(int amount)
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null){
+                return;
+            }
+            _hubInteractionService.ExecuteAction(_gameService.BetAsync, username, amount);
+        }
+
+        public async Task Fold()
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null){
+                return;
+            }
+            _hubInteractionService.ExecuteAction((username, _) => _gameService.FoldAsync(username), username);
+        }
+
+        public async Task ShowCards()
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null){
+                return;
+            }
+            _hubInteractionService.ExecuteAction((username, _) => _gameService.ShowCardsAsync(username), username);
+        }
+
+        public async Task MuckCards()
+        {
+            var username = Context.User?.Identity?.Name;
+            if (username == null){
+                return;
+            }
+            _hubInteractionService.ExecuteAction((username, _) => _gameService.MuckCardsAsync(username), username);
+        }
+
+        public async Task Leave()
         {
             var username = Context.User?.Identity?.Name;
             if (username == null){
@@ -44,49 +90,18 @@ namespace pokerapi.Hubs
             if (game == null){
                 return;
             }
-            var actions = await actionFunc(username, amount);
-            foreach (var action in actions){
-                if(action.ActionName == "AutoCheck"){
-                    await HandleAutoCheck(action.PlayerName);
-                }
-                else if(action.ActionName == "BotTurn"){
-                    await HandleBotAction(action.PlayerName);
-                }else{
-                    await Clients.Group(game.Id.ToString()).SendAsync("Send", action);
-                    var lastAction = actions.Last();
-                    if(lastAction == action)
-                    {
-                        await Clients.Group(game.Id.ToString()).SendAsync("Refresh");
-                    }
-                }
+            string botName = await _lobbyService.LeaveGameAsync(username);
+            GameAction botify = new GameAction{
+                ActionName = "PlayerLeft",
+                PlayerName = username
+            };
+            await Clients.Group(game.Id.ToString()).SendAsync("Send", botify);
+            if(botName != null){
+                await _hubInteractionService.HandleBotAction(botName);
+            }else{
+                await Clients.Group(game.Id.ToString()).SendAsync("Refresh");
             }
         }
-
-        public async Task Check()
-        {
-            await ExecuteAction((username, _) => _gameService.CheckAsync(username));
-        }
-
-        public async Task Bet(int amount)
-        {
-            await ExecuteAction(_gameService.BetAsync, amount);
-        }
-
-        public async Task Fold()
-        {
-            await ExecuteAction((username, _) => _gameService.FoldAsync(username));
-        }
-
-        public async Task ShowCards()
-        {
-            await ExecuteAction((username, _) => _gameService.ShowCardsAsync(username));
-        }
-
-        public async Task MuckCards()
-        {
-            await ExecuteAction((username, _) => _gameService.MuckCardsAsync(username));
-        }
-
         public async Task<object> Refresh()
         {
             var username = Context.User?.Identity?.Name;
@@ -110,55 +125,7 @@ namespace pokerapi.Hubs
             };
             return await Task.FromResult(response);
         }
-
-        private async Task HandleBotAction(string botName)
-        {
-            var game = await _gameService.GetGameAsync(botName);
-            if (game == null){
-                return;
-            }
-            var actions = await _botService.BotMove(botName);
-            foreach (var action in actions){
-                if(action.ActionName == "AutoCheck"){
-                    await HandleAutoCheck(action.PlayerName);
-                }
-                else if(action.ActionName == "BotTurn"){
-                    await HandleBotAction(action.PlayerName);
-                }else{
-                    await Clients.Group(game.Id.ToString()).SendAsync("Send", action);
-                    var lastAction = actions.Last();
-                    if(lastAction == action)
-                    {
-                        await Clients.Group(game.Id.ToString()).SendAsync("Refresh");
-                    }
-                }
-            }
-        }
-        private async Task HandleAutoCheck(string username)
-        {
-            var game = await _gameService.GetGameAsync(username);
-            if (game == null){
-                return;
-            }
-            var actions = await _gameService.CheckAsync(username);
-            foreach (var action in actions){
-                if(action.ActionName == "AutoCheck"){
-                    await HandleAutoCheck(action.PlayerName);
-                }
-                else if(action.ActionName == "BotTurn"){
-                    await HandleBotAction(action.PlayerName);
-                }else{
-                    await Clients.Group(game.Id.ToString()).SendAsync("Send", action);
-                    var lastAction = actions.Last();
-                    if(lastAction == action)
-                    {
-                        await Clients.Group(game.Id.ToString()).SendAsync("Refresh");
-                    }
-                }
-            }
-        }
-
-        public async Task Leave()
+        public async Task Kick(string kickedUsername)
         {
             var username = Context.User?.Identity?.Name;
             if (username == null){
@@ -168,14 +135,19 @@ namespace pokerapi.Hubs
             if (game == null){
                 return;
             }
-            string botName = await _lobbyService.LeaveGameAsync(username);
+            string botName = await _lobbyService.LeaveGameAsync(kickedUsername);
+            if (botName == null || !botName.StartsWith("BotLeave")) {
+                return;
+            }            
             GameAction botify = new GameAction{
                 ActionName = "PlayerLeft",
-                PlayerName = username
+                PlayerName = kickedUsername
             };
             await Clients.Group(game.Id.ToString()).SendAsync("Send", botify);
             if(botName != null){
-                await HandleBotAction(botName);
+                await _hubInteractionService.HandleBotAction(botName);
+            }else{
+                await Clients.Group(game.Id.ToString()).SendAsync("Refresh");
             }
         }
     }

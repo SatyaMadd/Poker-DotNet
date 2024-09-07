@@ -1,0 +1,14 @@
+<header>
+    <div class="container">
+      <a href="/home" class="logo">Poker App</a> 
+      <div class="user-actions" *ngIf="isLoggedIn">
+        <span class="username">
+          Welcome {{ username }} 
+        </span>
+        <button class="logout-button" (click)="logout()">Logout</button>
+      </div>
+      <ul *ngIf="!isLoggedIn && currentRoute !== '/home'" class="nav">
+        <li><a href="/home" class="login-button">Login</a></li>
+      </ul>
+    </div>
+  </header>

@@ -1,0 +1,53 @@
+header {
+    background-color: #d6d9ff; /* Add your desired background color */
+    padding: 15px 0; /* Add padding for spacing */
+  }
+  
+  .container {
+    display: flex;
+    justify-content: space-between; /* Position elements on left and right */
+    align-items: center; /* Vertically align items */
+    max-width: 960px; /* Limit container width for better responsiveness */
+    margin: 0 auto; /* Center the container */
+    padding: 0 15px; /* Add padding for spacing */
+  }
+  
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+    color: #333; /* Add your desired logo color */
+  }
+  
+  .user-actions {
+    display: flex;
+    align-items: center;
+  }
+  
+  .username {
+    margin-right: 15px; /* Add spacing between username and logout */
+  }
+  
+  .material-icons {
+    font-size: 1.2rem; /* Adjust icon size as needed */
+    vertical-align: middle; /* Align icon vertically with text */
+  }
+  
+  .logout-button {
+    padding: 10px 20px; /* Adjust padding as needed */
+    background-color: #788899; /* Example button color */
+    color: white;
+    border: none;
+    border-radius: 5px; /* Optional rounded corners */
+    text-decoration: none; /* Remove underline from link */
+    cursor: pointer;
+  }
+  .login-button {
+    padding: 10px 20px; /* Adjust padding as needed */
+    background-color: #788899; /* Example button color */
+    color: white;
+    border: none;
+    border-radius: 5px; /* Optional rounded corners */
+    text-decoration: none; /* Remove underline from link */
+    cursor: pointer;
+  }

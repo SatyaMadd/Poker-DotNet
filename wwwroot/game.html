@@ -4,6 +4,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
 </head>
 <body>
+
     <table>
         <thead>
             <tr>
@@ -57,6 +58,8 @@
         </thead>
     </table>
     <button id="leaveButton" onclick="leave()">Leave</button>
+    <br>
+    <div id="waitingPlayerList"></div>
     <script>
         function parseJwt(token) {
             var base64Url = token.split('.')[1];
@@ -84,39 +87,54 @@
             isProcessing = false; 
         }
 
-        const connection = new signalR.HubConnectionBuilder()
+        const gameConnection = new signalR.HubConnectionBuilder()
             .withUrl("/gamehub", { accessTokenFactory: () => token })
             .build();
-        connection.start().catch(function (err) {
+        const joinConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/joinhub", { accessTokenFactory: () => token })
+            .build();
+        gameConnection.start().catch(function (err) {
             return console.error(err.toString());
         });
-        connection.on("Send", function (action) {
+        joinConnection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+        gameConnection.on("Send", function (action) {
             console.log("Received Send event");
             if(action.actionName == "DeleteGame"){
                 window.location.href = '/join';
             }
         });
-        connection.on("Refresh", function () {
+        gameConnection.on("Refresh", function () {
             queue.push(true);
             processQueue();
+        });
+        joinConnection.on("WaitingRoomRefresh", async function () {
+            await waitingRoomRefresh();
         });
 
         async function refresh() {
             console.log('Refreshing...');
             try {
-                let response = await connection.invoke("Refresh");
+                let response = await gameConnection.invoke("Refresh");
 
                 const game = response.game;
                 if(game == null){
                     window.location.href = '/join';
                 }
-                const players = await response.players;
-                const playerCards = await response.playerCards;
-                const allPlayerCards = await response.allPlayerCards;
+                const players = response.players;
+                const playerCards = response.playerCards;
+                const allPlayerCards = response.allPlayerCards;
 
                 let tbody = document.getElementById('playerTableBody');
                 tbody.innerHTML = '';
 
+                var isAdmin = false;
+                players.forEach(p => {
+                    if(p.username === username && p.isAdmin){
+                        isAdmin = true;
+                    }
+                });
                 players.forEach(player => {
                     let row = tbody.insertRow();
 
@@ -124,11 +142,21 @@
                     let chipsCell = row.insertCell();
                     let turnCell = row.insertCell();
                     let statusCell = row.insertCell();
+                    let kickCell = row.insertCell();
 
                     usernameCell.textContent = player.username;
                     chipsCell.textContent = player.chips;
                     turnCell.textContent = player.isTurn ? 'Yes' : 'No';
                     statusCell.textContent = player.status ? 'Active' : 'Inactive';
+
+                    if(isAdmin){
+                        if(player.username !== username){
+                            let kickButton = document.createElement('button');
+                            kickButton.textContent = 'Kick';
+                            kickButton.onclick = () => gameKick(player.username);
+                            kickCell.appendChild(kickButton);
+                        }
+                    }
                 });
 
                 const commCardsTable = document.getElementById('commCardsTable');
@@ -154,7 +182,6 @@
 
                 const isPlayerTurn = players.some(player => player.username === username && player.isTurn);
                 const betHasOccurred = game.betHasOccurred;
-
                 if (game.showdown) {
                     checkButton.style.display = 'none';
                     callButton.style.display = 'none';
@@ -205,29 +232,66 @@
             }
         }
 
+        async function waitingRoomRefresh() {
+            joinConnection.invoke("GetWaitingRoomPlayers")
+                .then(players => {
+                    var playerList = document.getElementById('waitingPlayerList');
+                    playerList.innerHTML = '';
+                    players.forEach(player => {
+                        var playerElement = document.createElement('div');
+                        playerElement.textContent = player.username;
+                        playerList.appendChild(playerElement);
+
+                        var kickButton = document.createElement('button');
+                        kickButton.textContent = 'Kick';
+                        kickButton.onclick = () => waitingRoomKick(player.username);
+                        playerElement.appendChild(kickButton);
+
+                        var admitButton = document.createElement('button');
+                        admitButton.textContent = 'Admit';
+                        admitButton.onclick = () => admit(player.username);
+                        playerElement.appendChild(admitButton);
+                    });
+                }).catch(error => {
+                    console.error('Error fetching players:', error);
+                });
+        }
+
         function check() {
-            connection.invoke("Check")
+            gameConnection.invoke("Check")
                 .catch(err => console.error(err.toString()));
         }
         function bet(amount) {
-            connection.invoke("Bet", parseInt(amount))
+            gameConnection.invoke("Bet", parseInt(amount))
                 .catch(err => console.error(err.toString()));
         }
         function fold() {
-            connection.invoke("Fold")
+            gameConnection.invoke("Fold")
                 .catch(err => console.error(err.toString()));
         }
         function leave() {
-            connection.invoke("Leave")
+            gameConnection.invoke("Leave")
                 .catch(err => console.error(err.toString()));
             window.location.href = '/join';
         }
         function showCards() {
-            connection.invoke("ShowCards")
+            gameConnection.invoke("ShowCards")
                 .catch(err => console.error(err.toString()));
         }
         function muckCards() {
-            connection.invoke("MuckCards")
+            gameConnection.invoke("MuckCards")
+                .catch(err => console.error(err.toString()));
+        }
+        function gameKick(username) {
+            gameConnection.invoke("Kick", username)
+                .catch(err => console.error(err.toString()));
+        }
+        function waitingRoomKick(username) {
+            joinConnection.invoke("Kick", username)
+                .catch(err => console.error(err.toString()));
+        }
+        function admit(username) {
+            joinConnection.invoke("Admit", username)
                 .catch(err => console.error(err.toString()));
         }
     </script>
